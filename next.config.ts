@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  // Force webpack mode to avoid Turbopack issues with .md and .sql files
   webpack: (config, { isServer }) => {
-    // Ignore .md and .sql files from webpack bundling
     config.module.rules.push({
       test: /\.(md|sql)$/,
       use: 'raw-loader',
