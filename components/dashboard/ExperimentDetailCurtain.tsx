@@ -26,6 +26,18 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+interface WizaProspect {
+    id: string
+    full_name: string
+    job_title: string
+    job_company_name?: string
+    location_name?: string
+    job_company_industry?: string
+    job_company_size?: string
+    job_company_inferred_revenue?: string
+    linkedin_url?: string
+}
+
 interface ExperimentDetailCurtainProps {
     experiment: Experiment | null
     isOpen: boolean
@@ -42,6 +54,8 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
     const [copiedToClipboard, setCopiedToClipboard] = useState(false)
     const [isRefreshingFilters, setIsRefreshingFilters] = useState(false)
     const [filterRefreshError, setFilterRefreshError] = useState<string | null>(null)
+    const [optimizationResults, setOptimizationResults] = useState<{prospectCount: number, appliedFilters: string[], prospects?: WizaProspect[]} | null>(null)
+    const [viewMode, setViewMode] = useState<'experiment' | 'prospects'>('experiment')
 
     // Keep the experiment data around even when the parent nulls it out, 
     // so we can animate it sliding away with its content still visible.
@@ -121,7 +135,9 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
     const handleCopyWizaFilters = async () => {
         if (!displayExp) return
         try {
-            await navigator.clipboard.writeText(JSON.stringify(displayExp.wiza_filters, null, 2))
+            // If we have optimization results, use those filters, otherwise use the experiment's filters
+            const filtersToCopy = displayExp.wiza_filters
+            await navigator.clipboard.writeText(JSON.stringify(filtersToCopy, null, 2))
             setCopiedToClipboard(true)
             setTimeout(() => setCopiedToClipboard(false), 2000)
         } catch (error) {
@@ -157,6 +173,12 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
                     removedFilters: data.optimization.removedFilters,
                     iterations: data.optimization.iterations?.length
                 })
+                // Store optimization results for UI display
+                setOptimizationResults({
+                    prospectCount: data.optimization.prospectCount,
+                    appliedFilters: Object.keys(data.wiza_filters),
+                    prospects: data.optimization.prospects
+                })
             }
             
             const { success } = await updateExperiment(displayExp.id, {
@@ -189,13 +211,24 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
             <div className="p-6 border-b border-[#EEEEEE] flex items-center justify-between bg-gradient-to-r from-white to-gray-50/30">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
+                        {viewMode === 'prospects' && (
+                            <button
+                                onClick={() => setViewMode('experiment')}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-all hover:shadow-sm mr-2"
+                            >
+                                <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back
+                            </button>
+                        )}
                         <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider text-[#43B97B] bg-[#43B97B]/5 border-[#43B97B]/20">
-                            Experiment Details
+                            {viewMode === 'prospects' ? 'Prospect Details' : 'Experiment Details'}
                         </Badge>
                         <span className="text-[10px] font-mono text-gray-400 font-medium">ID: {displayExp.id.slice(0, 8).toUpperCase()}</span>
                     </div>
                     <h2 className="text-xl font-extrabold text-[#333333] tracking-tight leading-tight">
-                        {displayExp.name.replace(/^[^:]+:\s*/, '')}
+                        {viewMode === 'prospects' ? 'Found Prospects' : displayExp.name.replace(/^[^:]+:\s*/, '')}
                     </h2>
                 </div>
                 <button
@@ -206,7 +239,8 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
                 </button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs - Only show in experiment mode */}
+            {viewMode === 'experiment' && (
             <div className="px-6 flex items-center gap-6 border-b border-[#EEEEEE]">
                 {tabs.map((tab) => (
                     <button
@@ -229,10 +263,74 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
                     </button>
                 ))}
             </div>
+            )}
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto p-6">
-                {activeTab === 'hypothesis' && (
+                {viewMode === 'prospects' ? (
+                    <div className="space-y-4">
+                        {/* Prospect List */}
+                        {optimizationResults?.prospects && optimizationResults.prospects.length > 0 ? (
+                            <>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-gray-900">
+                                        {optimizationResults.prospectCount} Prospects Found
+                                    </h3>
+                                    <Badge variant="secondary" className="bg-[#43B97B]/10 text-[#43B97B] border-[#43B97B]/20">
+                                        Optimized Results
+                                    </Badge>
+                                </div>
+                                <div className="space-y-3">
+                                    {optimizationResults.prospects.map((prospect: WizaProspect, index: number) => (
+                                        <div key={index} className="bg-white border border-[#EEEEEE] rounded-xl p-4 hover:shadow-md transition-shadow space-y-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="space-y-1 flex-1">
+                                                    <h4 className="font-bold text-[#333333]">
+                                                        {prospect.full_name}
+                                                    </h4>
+                                                    <p className="text-sm text-gray-600">{prospect.job_title}</p>
+                                                </div>
+                                            </div>
+                                            {prospect.job_company_name && (
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <span className="text-gray-400">@</span>
+                                                    <span className="font-medium text-gray-700">{prospect.job_company_name}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex flex-wrap gap-2 pt-2 border-t border-[#EEEEEE]">
+                                                {prospect.location_name && (
+                                                    <Badge variant="outline" className="text-[10px]">📍 {prospect.location_name}</Badge>
+                                                )}
+                                                {prospect.job_company_industry && (
+                                                    <Badge variant="outline" className="text-[10px]">🏢 {prospect.job_company_industry}</Badge>
+                                                )}
+                                                {prospect.job_company_size && (
+                                                    <Badge variant="outline" className="text-[10px]">👥 {prospect.job_company_size}</Badge>
+                                                )}
+                                                {prospect.job_company_inferred_revenue && (
+                                                    <Badge variant="outline" className="text-[10px]">💰 {prospect.job_company_inferred_revenue}</Badge>
+                                                )}
+                                                {prospect.linkedin_url && (
+                                                    <Badge variant="outline" className="text-[10px]">
+                                                        <a href={`https://${prospect.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#43B97B]">
+                                                            🔗 LinkedIn
+                                                        </a>
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <MagnifyingGlassIcon className="size-12 mx-auto mb-4 text-gray-300" />
+                                <p className="text-sm">No prospect data available</p>
+                                <p className="text-xs mt-1">Click Refresh to generate new filters and find prospects</p>
+                            </div>
+                        )}
+                    </div>
+                ) : activeTab === 'hypothesis' && (
                     <div className="space-y-8">
                         {/* Pattern Container */}
                         <div className="space-y-3">
@@ -290,6 +388,39 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
                                     </button>
                                 </div>
                             </div>
+                            
+                            {/* Optimization Results */}
+                            {optimizationResults && (
+                                <div className="bg-gradient-to-r from-[#43B97B]/10 to-[#43B97B]/5 border border-[#43B97B]/20 rounded-xl p-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Optimization Results</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <p className="text-2xl font-extrabold text-[#43B97B]">{optimizationResults.prospectCount.toLocaleString()}</p>
+                                                <p className="text-xs font-medium text-gray-600">prospects found</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setViewMode('prospects')}
+                                            className="size-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                                            title="View prospect details"
+                                        >
+                                            <MagnifyingGlassIcon className="size-6 text-[#43B97B]" />
+                                        </button>
+                                    </div>
+                                    <div className="pt-2 border-t border-[#43B97B]/10">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Applied Filters</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {optimizationResults.appliedFilters.map((filter, i) => (
+                                                <Badge key={i} variant="secondary" className="bg-white/90 border-[#43B97B]/20 text-gray-700 text-[10px] font-medium px-2 py-0.5">
+                                                    {filter.replace(/_/g, ' ')}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             {filterRefreshError && (
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
                                     <strong>Error:</strong> {filterRefreshError}

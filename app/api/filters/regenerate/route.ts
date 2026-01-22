@@ -10,17 +10,25 @@ import {
     WizaFilters
 } from '@/lib/wiza/filter-optimizer'
 
-const TARGET_PROSPECT_COUNT = 200
-const MIN_ACCEPTABLE_COUNT = 50
-const MAX_PAGES_PER_TEST = 3 // Test with fewer pages for speed
+const TARGET_PROSPECT_COUNT = 500
+const MIN_ACCEPTABLE_COUNT = 200
+const MAX_PAGES_PER_TEST = Infinity // Fetch all available prospects
 
 interface WizaSearchPayload {
     query: WizaFilters
     page_size: number
 }
 
+interface WizaSearchResult {
+    data?: unknown[]
+    total?: number
+    total_relation?: string
+    length?: number
+    [key: string]: unknown
+}
+
 interface WizaClient {
-    search: (payload: WizaSearchPayload, maxPages: number) => Promise<unknown[]>
+    search: (payload: WizaSearchPayload, maxPages: number) => Promise<WizaSearchResult>
 }
 
 /**
@@ -28,15 +36,15 @@ interface WizaClient {
  */
 async function getWizaClient(): Promise<WizaClient> {
     try {
-        // Try to import the SimpleProspectClient
-        const simplePath = path.join(process.cwd(), 'linkedin-scraper/simple.cjs')
-        const { SimpleProspectClient } = await import(simplePath)
+        // Use relative import for .cjs CommonJS modules
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { SimpleProspectClient } = require('../../../../linkedin-scraper/simple.cjs')
         
         const client = new SimpleProspectClient({
             baseUrl: 'https://wiza.co',
             email: process.env.WIZA_EMAIL!,
             password: process.env.WIZA_PASSWORD!,
-            sessionFile: path.join(process.cwd(), 'data/wiza-session.json'),
+            sessionFile: path.join(process.cwd(), 'data', 'wiza-session.json'),
             debug: false,
         })
         
@@ -48,9 +56,9 @@ async function getWizaClient(): Promise<WizaClient> {
 }
 
 /**
- * Test filters and count prospects
+ * Test filters and return prospect data
  */
-async function testFilters(client: WizaClient, filters: WizaFilters): Promise<number> {
+async function testFilters(client: WizaClient, filters: WizaFilters): Promise<{count: number, prospects: unknown[], total?: number}> {
     try {
         const results = await client.search(
             {
@@ -59,10 +67,21 @@ async function testFilters(client: WizaClient, filters: WizaFilters): Promise<nu
             },
             MAX_PAGES_PER_TEST
         )
-        return results.length
+        
+        // Extract total from the response metadata or use the data length
+        const total = results.total || (Array.isArray(results) ? results.length : 0)
+        const prospects = Array.isArray(results) ? results : (results.data || [])
+        
+        console.log(`Test results: ${prospects.length} fetched, ${total} total available`)
+        
+        return { 
+            count: total, // Use the actual total from API
+            prospects: prospects,
+            total
+        }
     } catch (error) {
         console.error('Error testing filters:', error)
-        return 0
+        return { count: 0, prospects: [], total: 0 }
     }
 }
 
@@ -76,27 +95,34 @@ async function optimizeFilters(
     const iterations: OptimizationResult['iterations'] = []
     let currentFilters = { ...initialFilters }
     const removedFilters: string[] = []
+    let finalProspectCount = 0
+    let finalProspects: unknown[] = []
     
     console.log('Starting filter optimization...')
     console.log('Initial filters:', formatFiltersForDisplay(currentFilters))
     
     // Try initial filters
-    const initialCount = await testFilters(client, currentFilters)
-    console.log(`Initial count: ${initialCount}`)
+    const initialResult = await testFilters(client, currentFilters)
+    console.log(`Initial count: ${initialResult.count}`)
     
     iterations.push({
         filters: Object.keys(currentFilters),
-        count: initialCount,
+        count: initialResult.count,
     })
     
-    if (initialCount >= MIN_ACCEPTABLE_COUNT) {
+    if (initialResult.count >= MIN_ACCEPTABLE_COUNT) {
         return {
             filters: currentFilters,
-            prospectCount: initialCount,
+            prospectCount: initialResult.count,
             removedFilters: [],
+            prospects: initialResult.prospects,
             iterations,
         }
     }
+    
+    // Store initial results in case we don't find better
+    finalProspectCount = initialResult.count
+    finalProspects = initialResult.prospects
     
     // Get filters to try removing (least important first)
     const removableFilters = getRemovableFiltersInOrder(currentFilters)
@@ -109,28 +135,31 @@ async function optimizeFilters(
         currentFilters = removeFilter(currentFilters, filterToRemove)
         removedFilters.push(filterToRemove)
         
-        const count = await testFilters(client, currentFilters)
-        console.log(`Count without ${filterToRemove}: ${count}`)
+        const result = await testFilters(client, currentFilters)
+        console.log(`Count without ${filterToRemove}: ${result.count}`)
         
         iterations.push({
             filters: Object.keys(currentFilters),
-            count,
+            count: result.count,
             removedFilter: filterToRemove,
         })
         
+        // Update final results with each iteration
+        finalProspectCount = result.count
+        finalProspects = result.prospects
+        
         // If we've reached acceptable count, stop
-        if (count >= MIN_ACCEPTABLE_COUNT) {
-            console.log(`✓ Found acceptable count: ${count}`)
+        if (result.count >= MIN_ACCEPTABLE_COUNT) {
+            console.log(`✓ Found acceptable count: ${result.count}`)
             break
         }
     }
     
-    const finalCount = await testFilters(client, currentFilters)
-    
     return {
         filters: currentFilters,
-        prospectCount: finalCount,
+        prospectCount: finalProspectCount,
         removedFilters,
+        prospects: finalProspects,
         iterations,
     }
 }
@@ -243,6 +272,7 @@ Only include fields that are highly relevant to finding this specific ICP. Be st
                 optimization: {
                     prospectCount: optimizationResult.prospectCount,
                     removedFilters: optimizationResult.removedFilters,
+                    prospects: optimizationResult.prospects,
                     iterations: optimizationResult.iterations,
                     targetCount: TARGET_PROSPECT_COUNT,
                     minAcceptableCount: MIN_ACCEPTABLE_COUNT,

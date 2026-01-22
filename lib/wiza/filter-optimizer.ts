@@ -25,6 +25,7 @@ export interface OptimizationResult {
     filters: WizaFilters
     prospectCount: number
     removedFilters: string[]
+    prospects?: unknown[]
     iterations: Array<{
         filters: string[]
         count: number
