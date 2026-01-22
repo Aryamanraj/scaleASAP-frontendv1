@@ -1,0 +1,33 @@
+{
+  "name": "@local/prospect-client",
+  "version": "1.0.0",
+  "description": "Prospect search client for Wiza.co",
+  "type": "commonjs",
+  "main": "./simple.cjs",
+  "types": "./simple.d.ts",
+  "exports": {
+    ".": {
+      "require": "./simple.cjs",
+      "import": "./simple.cjs",
+      "types": "./simple.d.ts"
+    },
+    "./simple.cjs": {
+      "require": "./simple.cjs",
+      "import": "./simple.cjs"
+    },
+    "./index.cjs": {
+      "require": "./index.cjs",
+      "import": "./index.cjs"
+    },
+    "./cli.cjs": {
+      "default": "./cli.cjs"
+    }
+  },
+  "files": [
+    "simple.cjs",
+    "index.cjs",
+    "cli.cjs",
+    "*.d.ts",
+    "*.map"
+  ]
+}

@@ -1,0 +1,234 @@
+import OpenAI from 'openai';
+import { GoogleGenerativeAI, Content, ModelParams } from '@google/generative-ai';
+
+// Initialize clients
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+export interface ChatMessage {
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+}
+
+export interface ChatCompletionOptions {
+    model?: string;
+    messages: ChatMessage[];
+    temperature?: number;
+    stream?: boolean;
+}
+
+export interface ChatCompletionResult {
+    content: string;
+    provider: 'openai' | 'gemini';
+}
+
+/**
+ * Attempts to call OpenAI first. If rate limited (429), falls back to Gemini.
+ */
+export async function chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResult> {
+    const { model = 'gpt-4o', messages, temperature = 1 } = options;
+
+    try {
+        // Try OpenAI first
+        const response = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature,
+        });
+
+        const content = response.choices[0]?.message?.content || '';
+        return { content, provider: 'openai' };
+
+    } catch (error: unknown) {
+        const err = error as { status?: number; code?: string; message?: string };
+        const isRateLimitError = err?.status === 429 ||
+            err?.code === 'rate_limit_exceeded' ||
+            err?.message?.includes('429') ||
+            err?.message?.includes('rate limit') ||
+            err?.message?.includes('quota');
+
+        if (isRateLimitError) {
+            console.warn('[AI Provider] OpenAI rate limited or quota exceeded, falling back to Gemini...');
+            return await geminiChatCompletion(messages, temperature);
+        }
+
+        throw error;
+    }
+}
+
+/**
+ * Streaming chat completion with automatic fallback
+ */
+export async function chatCompletionStream(options: ChatCompletionOptions): Promise<{
+    stream: ReadableStream;
+    provider: 'openai' | 'gemini';
+}> {
+    const { model = 'gpt-4o', messages, temperature = 1 } = options;
+
+    try {
+        // Try OpenAI first
+        const response = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature,
+            stream: true,
+        });
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of response) {
+                        const content = chunk.choices[0]?.delta?.content || '';
+                        controller.enqueue(new TextEncoder().encode(content));
+                    }
+                    controller.close();
+                } catch (e) {
+                    controller.error(e);
+                }
+            },
+        });
+
+        return { stream, provider: 'openai' };
+
+    } catch (error: unknown) {
+        const err = error as { status?: number; code?: string; message?: string };
+        const isRateLimitError = err?.status === 429 ||
+            err?.code === 'rate_limit_exceeded' ||
+            err?.message?.includes('429') ||
+            err?.message?.includes('rate limit') ||
+            err?.message?.includes('quota');
+
+        if (isRateLimitError) {
+            console.warn('[AI Provider] OpenAI rate limited or quota exceeded, falling back to Gemini streaming...');
+            return await geminiChatCompletionStream(messages, temperature);
+        }
+
+        throw error;
+    }
+}
+
+/**
+ * Convert OpenAI messages to Gemini format, ensuring strictly alternating roles
+ */
+function convertMessagesToGeminiFormat(messages: ChatMessage[]) {
+    // Extract system instructions
+    const systemMessages = messages.filter(m => m.role === 'system').map(m => m.content);
+    const systemInstruction = systemMessages.join('\n\n');
+
+    // Filter non-system messages
+    const nonSystemMessages = messages.filter(m => m.role !== 'system');
+
+    // Gemini history format: strictly alternating 'user' and 'model'
+    const history: Content[] = [];
+
+    for (const msg of nonSystemMessages) {
+        const role = msg.role === 'assistant' ? 'model' : 'user';
+        const lastMsg = history[history.length - 1];
+
+        if (lastMsg && lastMsg.role === role) {
+            // Merge consecutive same-role messages
+            lastMsg.parts[0].text += '\n\n' + msg.content;
+        } else {
+            // Gemini MUST start with 'user'
+            if (history.length === 0 && role === 'model') {
+                history.push({ role: 'user', parts: [{ text: 'Please start the discovery process.' }] });
+            }
+            history.push({ role, parts: [{ text: msg.content }] });
+        }
+    }
+
+    // Ensure history is not empty
+    if (history.length === 0) {
+        history.push({ role: 'user', parts: [{ text: 'Hello' }] });
+    }
+
+    // Last message must be from user for sendMessage/sendMessageStream
+    let lastUserMessage = 'Continue';
+    if (history[history.length - 1].role === 'user') {
+        const last = history.pop();
+        lastUserMessage = last?.parts[0]?.text || 'Continue';
+    } else {
+        lastUserMessage = 'Please continue based on the above.';
+    }
+
+    return {
+        systemInstruction,
+        history,
+        lastUserMessage
+    };
+}
+
+/**
+ * Gemini fallback for regular chat completion
+ */
+async function geminiChatCompletion(messages: ChatMessage[], temperature: number): Promise<ChatCompletionResult> {
+    const { systemInstruction, history, lastUserMessage } = convertMessagesToGeminiFormat(messages);
+
+    const modelParams: ModelParams = {
+        model: 'gemini-2.5-flash-lite',
+        generationConfig: { temperature }
+    };
+
+    if (systemInstruction) {
+        modelParams.systemInstruction = {
+            role: 'system',
+            parts: [{ text: systemInstruction }]
+        };
+    }
+
+    console.log(`[AI Provider] Using Gemini model: ${modelParams.model}`);
+    const model = gemini.getGenerativeModel(modelParams);
+    const chat = model.startChat({ history });
+
+    const result = await chat.sendMessage(lastUserMessage);
+    const content = result.response.text();
+
+    return { content, provider: 'gemini' };
+}
+
+/**
+ * Gemini fallback for streaming chat completion
+ */
+async function geminiChatCompletionStream(messages: ChatMessage[], temperature: number): Promise<{
+    stream: ReadableStream;
+    provider: 'gemini';
+}> {
+    const { systemInstruction, history, lastUserMessage } = convertMessagesToGeminiFormat(messages);
+
+    const modelParams: ModelParams = {
+        model: 'gemini-2.5-flash-lite',
+        generationConfig: { temperature }
+    };
+
+    if (systemInstruction) {
+        modelParams.systemInstruction = {
+            role: 'system',
+            parts: [{ text: systemInstruction }]
+        };
+    }
+
+    console.log(`[AI Provider] Using Gemini model (stream): ${modelParams.model}`);
+    const model = gemini.getGenerativeModel(modelParams);
+    const chat = model.startChat({ history });
+
+    const result = await chat.sendMessageStream(lastUserMessage);
+
+    const stream = new ReadableStream({
+        async start(controller) {
+            try {
+                for await (const chunk of result.stream) {
+                    const text = chunk.text();
+                    controller.enqueue(new TextEncoder().encode(text));
+                }
+                controller.close();
+            } catch (e) {
+                controller.error(e);
+            }
+        },
+    });
+
+    return { stream, provider: 'gemini' };
+}

@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# nextjs
+.next/
+out/
+.vercel/
+.next.lock
+
+# build tooling
+.turbo/
+.swc/
+tsconfig.tsbuildinfo
+
+# env files
+.env
+.env.*
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# coverage / testing
+coverage/
+*.lcov
+
+# editor/system
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+
+# app data
+data/
