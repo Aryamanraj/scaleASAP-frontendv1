@@ -12,7 +12,7 @@ import {
 
 const TARGET_PROSPECT_COUNT = 500
 const MIN_ACCEPTABLE_COUNT = 200
-const MAX_PAGES_PER_TEST = Infinity // Fetch all available prospects
+const MAX_PAGES_PER_TEST = 20 // Fetch all available prospects
 
 interface WizaSearchPayload {
     query: WizaFilters
