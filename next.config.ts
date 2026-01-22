@@ -1,25 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     // Ignore .md and .sql files from webpack bundling
     config.module.rules.push({
       test: /\.(md|sql)$/,
-      type: 'asset/source',
+      use: 'raw-loader',
     });
     return config;
-  },
-  turbo: {
-    rules: {
-      '*.md': {
-        loaders: ['raw-loader'],
-        as: '*.js',
-      },
-      '*.sql': {
-        loaders: ['raw-loader'],
-        as: '*.js',
-      },
-    },
   },
 };
 
