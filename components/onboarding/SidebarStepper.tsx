@@ -3,7 +3,7 @@
 import { CheckIcon } from "@heroicons/react/20/solid"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ONBOARDING_STEPS, OnboardingStep } from "@/lib/onboarding-data"
+import { OnboardingStep } from "@/lib/onboarding-data"
 
 interface SidebarStepperProps {
     currentStepId: string
@@ -13,7 +13,7 @@ interface SidebarStepperProps {
     steps: OnboardingStep[]
 }
 
-export function SidebarStepper({ currentStepId, completedSteps, onStepClick, companyType, steps }: SidebarStepperProps) {
+export function SidebarStepper({ currentStepId, completedSteps, onStepClick, steps }: SidebarStepperProps) {
     return (
         <div className="w-full max-w-xs py-4 hidden lg:block">
             <div className="relative flex flex-col gap-0">

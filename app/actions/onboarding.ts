@@ -132,7 +132,7 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
         markdown += `- **Has Paying Customers:** ${data.hasPayingCustomers ? "Yes" : "No"}\n`
         if (data.bestCustomers?.length > 0) {
             markdown += `### Top Customers\n`
-            data.bestCustomers.forEach((cust, i) => {
+            data.bestCustomers.forEach((cust) => {
                 if (cust.name) {
                     markdown += `#### ${cust.name}\n`
                     markdown += `- **Problem:** ${cust.statedProblem}\n`

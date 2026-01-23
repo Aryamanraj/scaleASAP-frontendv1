@@ -1,7 +1,7 @@
 "use server"
 
 import { chatCompletion } from "@/lib/ai-provider";
-import { SCRAPE_CLEANUP_PROMPT } from "@/lib/prompts/scrape-cleanup";
+
 
 export async function scrapeWebsite(url: string) {
     if (!url) return { success: false, error: "No URL provided" };

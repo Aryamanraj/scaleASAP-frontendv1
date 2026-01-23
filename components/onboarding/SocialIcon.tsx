@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { Linkedin, Twitter, Youtube, Send, Hash } from "lucide-react"
 
 interface SocialIconProps {
@@ -33,9 +34,11 @@ export function SocialIcon({ brand, className }: SocialIconProps) {
     }
 
     return (
-        <img
+        <Image
             src={BRAND_LOGOS[brand]}
             alt={`${brand} logo`}
+            width={20}
+            height={20}
             className={className}
             onError={() => setHasError(true)}
             style={{ pointerEvents: 'none', objectFit: 'contain' }}

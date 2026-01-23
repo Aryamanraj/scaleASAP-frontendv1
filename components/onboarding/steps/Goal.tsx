@@ -55,7 +55,7 @@ export function Goal({ data, updateData }: GoalProps) {
                             Who do you think is your Ideal Customer Profile (ICP)?
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                            Even if you want to discover it, tell us your "best guess" or who you've been targeting so far.
+                            Even if you want to discover it, tell us your &quot;best guess&quot; or who you&apos;ve been targeting so far.
                         </p>
                         <Textarea
                             id="targetICP"
@@ -73,7 +73,7 @@ export function Goal({ data, updateData }: GoalProps) {
                         <Label className="text-base font-medium text-[#4A4A4A]">
                             How confident are you in this ICP?
                         </Label>
-                        <p className="text-sm text-muted-foreground">Scale from "Just Guessing" to "Highly Confident".</p>
+                        <p className="text-sm text-muted-foreground">Scale from &quot;Just Guessing&quot; to &quot;Highly Confident&quot;.</p>
                     </div>
 
                     <div className="px-4">

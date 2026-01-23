@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Workspace } from '@/app/actions/workspaces'
@@ -22,18 +23,19 @@ export function OnboardingGuard({ workspace }: OnboardingGuardProps) {
             <div className="relative w-full max-w-md bg-white border border-[#EEEEEE] rounded-[32px] shadow-2xl p-8 text-center animate-in fade-in zoom-in-95 duration-300">
                 <div className="mx-auto mb-6 size-20 bg-gray-100 rounded-[20px] flex items-center justify-center border border-[#EEEEEE] p-4 overflow-hidden">
                     {(workspace.favicon_url || domain) ? (
-                        <img
+                        <Image
                             src={workspace.favicon_url || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
                             alt=""
+                            width={40}
+                            height={40}
                             className="h-10 w-10 object-contain"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png";
-                            }}
                         />
                     ) : (
-                        <img
+                        <Image
                             src="https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png"
                             alt=""
+                            width={40}
+                            height={40}
                             className="h-10 w-10 object-contain"
                         />
                     )}

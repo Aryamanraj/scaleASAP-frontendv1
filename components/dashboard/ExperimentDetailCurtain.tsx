@@ -9,9 +9,6 @@ import {
     UserIcon,
     ChartBarIcon,
     MagnifyingGlassIcon,
-    SparklesIcon,
-    AdjustmentsHorizontalIcon,
-    ClipboardDocumentIcon,
     ArrowPathIcon,
     ChevronLeftIcon,
     ChevronRightIcon
@@ -19,13 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { updateExperiment } from '@/app/actions/workspaces'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 
 interface WizaProspect {
     id: string
@@ -49,7 +40,6 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
     const [activeTab, setActiveTab] = useState<'hypothesis' | 'leads' | 'activity'>('hypothesis')
     const [localExperiment, setLocalExperiment] = useState<Experiment | null>(experiment)
     const [isRefreshingFilters, setIsRefreshingFilters] = useState(false)
-    const [filterRefreshError, setFilterRefreshError] = useState<string | null>(null)
     const [optimizationResults, setOptimizationResults] = useState<{ prospectCount: number, appliedFilters: string[], prospects?: WizaProspect[] } | null>(null)
     const [viewMode, setViewMode] = useState<'experiment' | 'prospects' | 'prospect-detail'>('experiment')
     const [selectedProspect, setSelectedProspect] = useState<WizaProspect | null>(null)
@@ -83,7 +73,6 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
     const handleRefreshWizaFilters = async () => {
         if (!displayExp) return
         setIsRefreshingFilters(true)
-        setFilterRefreshError(null)
         try {
             const response = await fetch('/api/filters/regenerate', {
                 method: 'POST',
@@ -129,7 +118,6 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose }: Experim
             }
         } catch (error) {
             console.error('Failed to refresh filters:', error)
-            setFilterRefreshError(error instanceof Error ? error.message : 'Failed to refresh filters')
         } finally {
             setIsRefreshingFilters(false)
         }

@@ -1,11 +1,9 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { StepContent } from "../StepContent"
 import { OnboardingData } from "@/lib/onboarding-data"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface VoiceDNAProps {
     data: OnboardingData

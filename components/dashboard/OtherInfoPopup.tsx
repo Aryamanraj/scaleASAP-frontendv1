@@ -9,7 +9,7 @@ import { CustomerEvidence } from '../onboarding/steps/CustomerEvidence'
 import { WorldviewIntelligence } from '../onboarding/steps/WorldviewIntelligence'
 import { CurrentGTM } from '../onboarding/steps/CurrentGTM'
 import { SuccessDefinition } from '../onboarding/steps/SuccessDefinition'
-import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { saveOnboardingDataToMarkdown } from '@/app/actions/onboarding'
 
 interface OtherInfoPopupProps {

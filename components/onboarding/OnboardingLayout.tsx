@@ -1,6 +1,7 @@
 "use client"
 
 import { SidebarStepper } from "./SidebarStepper"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { BuildingOfficeIcon, WindowIcon, BeakerIcon } from "@heroicons/react/24/outline"
 import { ONBOARDING_STEPS } from "@/lib/onboarding-data"
@@ -43,7 +44,7 @@ export function OnboardingLayout({
                 <div className="p-8 pb-4">
                     <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
                         {faviconUrl ? (
-                            <img src={faviconUrl} alt="Company Favicon" className="h-7 w-7 object-contain" />
+                            <Image src={faviconUrl} alt="Company Favicon" width={28} height={28} className="h-7 w-7 object-contain" />
                         ) : (
                             <WorkspaceIcon className="h-6 w-6 text-[#43B97B]" />
                         )}

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StepContent } from "../StepContent"
 import { OnboardingData } from "@/lib/onboarding-data"
-import { GlobeAltIcon, BuildingOfficeIcon, WindowIcon, ArrowPathIcon, DocumentTextIcon, ShieldCheckIcon, SparklesIcon } from "@heroicons/react/24/outline"
+import { GlobeAltIcon, BuildingOfficeIcon, WindowIcon, ArrowPathIcon, SparklesIcon } from "@heroicons/react/24/outline"
 import { SocialIcon } from "../SocialIcon"
 import { scrapeWebsite } from "@/app/actions/scrape"
 

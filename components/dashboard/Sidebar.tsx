@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import {
     Squares2X2Icon as Squares2X2Outline,
     BeakerIcon as BeakerOutline,
@@ -82,13 +83,12 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange }: S
                     <div className="flex items-center gap-2.5 overflow-hidden">
                         <div className="p-1.5 bg-gray-100 rounded-[6px] h-7 w-7 flex items-center justify-center shrink-0 overflow-hidden relative border border-[#EEEEEE]">
                             {(workspace.favicon_url || workspace.website) && (
-                                <img
+                                <Image
                                     src={workspace.favicon_url || `https://www.google.com/s2/favicons?domain=${workspace.website?.replace('https://', '').replace('http://', '').split('/')[0]}&sz=128`}
                                     alt=""
+                                    width={16}
+                                    height={16}
                                     className="h-4 w-4 object-contain relative z-10"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = "https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png";
-                                    }}
                                 />
                             )}
                         </div>
@@ -117,13 +117,12 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange }: S
                                 >
                                     <div className="flex items-center gap-2.5 overflow-hidden">
                                         <div className="p-1 bg-gray-100 rounded-[4px] h-6 w-6 flex items-center justify-center shrink-0 overflow-hidden border border-[#EEEEEE]">
-                                            <img
+                                            <Image
                                                 src={ws.favicon_url || (ws.website ? `https://www.google.com/s2/favicons?domain=${ws.website.replace('https://', '').replace('http://', '').split('/')[0]}&sz=128` : "https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png")}
                                                 alt=""
+                                                width={14}
+                                                height={14}
                                                 className="h-3.5 w-3.5 object-contain"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png";
-                                                }}
                                             />
                                             {!ws.favicon_url && !ws.website && (
                                                 <span className="text-[10px] font-bold text-gray-400">

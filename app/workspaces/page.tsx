@@ -1,6 +1,7 @@
 "use client"
 
 import { BuildingOfficeIcon, PlusIcon, ArrowLeftStartOnRectangleIcon, TrashIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline"
+import NextImage from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -121,19 +122,12 @@ export default function WorkspacesPage() {
                                     <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-10 w-10 flex items-center justify-center overflow-hidden shrink-0 relative">
                                         <BuildingOfficeIcon className="h-6 w-6 text-gray-500 group-hover:text-[#43B97B] transition-colors absolute inset-0 m-auto" />
                                         {(ws.favicon_url || ws.website) && (
-                                            <img
+                                            <NextImage
                                                 src={ws.favicon_url || `https://www.google.com/s2/favicons?domain=${ws.website?.replace('https://', '').replace('http://', '').split('/')[0]}&sz=128`}
                                                 alt=""
-                                                className="h-6 w-6 object-contain relative z-10 opacity-0 transition-opacity duration-300 bg-gray-100 rounded-sm"
-                                                onLoad={(e) => {
-                                                    (e.target as HTMLImageElement).classList.remove('opacity-0');
-                                                    (e.target as HTMLImageElement).classList.add('opacity-100');
-                                                }}
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://pub-3d3b224ee6544903a80a5051e75e33a4.r2.dev/BLUE_BG.png";
-                                                    (e.target as HTMLImageElement).classList.remove('opacity-0');
-                                                    (e.target as HTMLImageElement).classList.add('opacity-100');
-                                                }}
+                                                width={24}
+                                                height={24}
+                                                className="h-6 w-6 object-contain relative z-10 transition-opacity duration-300 bg-gray-100 rounded-sm"
                                             />
                                         )}
                                     </div>
