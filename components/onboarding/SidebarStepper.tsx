@@ -3,30 +3,28 @@
 import { CheckIcon } from "@heroicons/react/20/solid"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ONBOARDING_STEPS } from "@/lib/onboarding-data"
+import { ONBOARDING_STEPS, OnboardingStep } from "@/lib/onboarding-data"
 
 interface SidebarStepperProps {
     currentStepId: string
     completedSteps: string[]
     onStepClick?: (index: number) => void
     companyType?: string
+    steps: OnboardingStep[]
 }
 
-export function SidebarStepper({ currentStepId, completedSteps, onStepClick, companyType }: SidebarStepperProps) {
+export function SidebarStepper({ currentStepId, completedSteps, onStepClick, companyType, steps }: SidebarStepperProps) {
     return (
         <div className="w-full max-w-xs py-4 hidden lg:block">
             <div className="relative flex flex-col gap-0">
-                {ONBOARDING_STEPS.map((step, index) => {
+                {steps.map((step: OnboardingStep, index: number) => {
                     const isCompleted = completedSteps.includes(step.id)
                     const isCurrent = currentStepId === step.id
-                    const isLast = index === ONBOARDING_STEPS.length - 1
+                    const isLast = index === steps.length - 1
 
-                    const canNavigateTo = completedSteps.includes(step.id) || isCompleted || index === ONBOARDING_STEPS.findIndex(s => s.id === currentStepId)
+                    const canNavigateTo = completedSteps.includes(step.id) || isCompleted || index === steps.findIndex((s: OnboardingStep) => s.id === currentStepId)
 
-                    let title = step.title
-                    if (step.id === 'product-strategy' && companyType === 'services') {
-                        title = "Offer Strategy"
-                    }
+                    const title = step.title;
 
                     return (
                         <div

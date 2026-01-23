@@ -252,7 +252,7 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                 </div>
 
                 {/* Delivery Capacity */}
-                <div className="space-y-6">
+                <div className="space-y-6 border-b border-gray-100 pb-8">
                     <h3 className="text-lg font-medium text-[#4A4A4A]">Delivery Capacity</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-4">
@@ -304,6 +304,52 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Business Stage & Scale */}
+                <div className="space-y-6 pt-4">
+                    <h3 className="text-lg font-medium text-[#4A4A4A]">Business Stage & Scale</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <Label className="text-base">Current Stage:</Label>
+                            <RadioGroup
+                                value={data.stage}
+                                onValueChange={(val) => updateData({ stage: val })}
+                                className="grid gap-2"
+                            >
+                                {[
+                                    { id: 'pre-seed', label: 'Pre-seed / Ideation' },
+                                    { id: 'seed', label: 'Seed / Early Traction' },
+                                    { id: 'series-a', label: 'Series A+' },
+                                    { id: 'bootstrapped', label: 'Bootstrapped & Profitable' },
+                                ].map((opt) => (
+                                    <div key={opt.id} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={opt.id} id={`stage-${opt.id}`} />
+                                        <Label htmlFor={`stage-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Current Revenue (ARR or MRR):</Label>
+                                <Input
+                                    placeholder="e.g. $50k MRR"
+                                    value={data.totalRevenue}
+                                    onChange={(e) => updateData({ totalRevenue: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Funding Status:</Label>
+                                <Input
+                                    placeholder="e.g. $2M Seed raised"
+                                    value={data.fundingAmount}
+                                    onChange={(e) => updateData({ fundingAmount: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </StepContent>
         );
     }
@@ -313,7 +359,7 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
             title="Product Strategy"
             description="Define the core mechanics and economics of your business."
         >
-            {/* What You Actually Built */}
+            {/* What You Actually Built section unchanged */}
             <div className="space-y-8 border-b border-gray-100 pb-8">
                 <h3 className="text-lg font-medium text-[#4A4A4A]">What You Actually Built</h3>
 
@@ -393,7 +439,7 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
             </div>
 
             {/* The Economics */}
-            <div className="space-y-6">
+            <div className="space-y-6 border-b border-gray-100 pb-8">
                 <h3 className="text-lg font-medium text-[#4A4A4A]">The Economics</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -450,6 +496,52 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                 onChange={(e) => updateData({ decisionProcessOther: e.target.value })}
                             />
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Business Stage & Scale */}
+            <div className="space-y-6 pt-8">
+                <h3 className="text-lg font-medium text-[#4A4A4A]">Business Stage & Scale</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <Label className="text-base">Current Stage:</Label>
+                        <RadioGroup
+                            value={data.stage}
+                            onValueChange={(val) => updateData({ stage: val })}
+                            className="grid gap-2"
+                        >
+                            {[
+                                { id: 'pre-seed', label: 'Pre-seed / Ideation' },
+                                { id: 'seed', label: 'Seed / Early Traction' },
+                                { id: 'series-a', label: 'Series A+' },
+                                { id: 'bootstrapped', label: 'Bootstrapped & Profitable' },
+                            ].map((opt) => (
+                                <div key={opt.id} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={opt.id} id={`stage-${opt.id}`} />
+                                    <Label htmlFor={`stage-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Current Revenue (ARR or MRR):</Label>
+                            <Input
+                                placeholder="e.g. $50k MRR"
+                                value={data.totalRevenue}
+                                onChange={(e) => updateData({ totalRevenue: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Funding Status:</Label>
+                            <Input
+                                placeholder="e.g. $2M Seed raised"
+                                value={data.fundingAmount}
+                                onChange={(e) => updateData({ fundingAmount: e.target.value })}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

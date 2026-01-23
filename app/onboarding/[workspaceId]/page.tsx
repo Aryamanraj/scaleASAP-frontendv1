@@ -5,13 +5,9 @@ import { useParams, useRouter } from "next/navigation"
 import { ONBOARDING_STEPS, INITIAL_DATA, OnboardingData } from "@/lib/onboarding-data"
 import { OnboardingLayout } from "@/components/onboarding/OnboardingLayout"
 import { CompanyBasics } from "@/components/onboarding/steps/CompanyBasics"
-import { FoundingStory } from "@/components/onboarding/steps/FoundingStory"
 import { ProductStrategy } from "@/components/onboarding/steps/ProductStrategy"
-import { CustomerEvidence } from "@/components/onboarding/steps/CustomerEvidence"
-import { WorldviewIntelligence } from "@/components/onboarding/steps/WorldviewIntelligence"
 import { VoiceDNA } from "@/components/onboarding/steps/VoiceDNA"
-import { CurrentGTM } from "@/components/onboarding/steps/CurrentGTM"
-import { SuccessDefinition } from "@/components/onboarding/steps/SuccessDefinition"
+import { Goal } from "@/components/onboarding/steps/Goal"
 import { saveOnboardingDataToMarkdown, getOnboardingData } from "@/app/actions/onboarding"
 import { generateWorldview } from "@/app/actions/worldview"
 import { getWorkspaceById } from "@/app/actions/workspaces"
@@ -28,6 +24,7 @@ export default function OnboardingPage() {
     const [completedSteps, setCompletedSteps] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isNavigating, setIsNavigating] = useState(false)
+    const [isScraping, setIsScraping] = useState(false)
     const [testMode, setTestMode] = useState(false)
 
     // Load from local storage AND server on mount
@@ -56,13 +53,6 @@ export default function OnboardingPage() {
                 console.error("Failed to load from server", err)
             }
 
-            // 2. Override with local storage if it exists (unsaved changes)? 
-            // Actually, if the user clicked "Edit Details", they probably want the saved state.
-            // But if they were mid-edit and reloaded, local storage is better.
-            // Let's bias towards local storage IF it exists, otherwise server.
-            // However, the prompt implies "Edit Details should open the prefilled form" (which implies saved data).
-            // If local storage is empty or stale, we need server data.
-
             if (typeof window !== "undefined") {
                 const savedData = localStorage.getItem(`onboarding_data_${workspaceId}`)
                 const savedStep = localStorage.getItem(`onboarding_step_${workspaceId}`)
@@ -72,8 +62,6 @@ export default function OnboardingPage() {
                 if (savedData) {
                     try {
                         const parsed = JSON.parse(savedData)
-                        // Simple heuristic: Merge, but if server has data and local doesn't (or diff), it's tricky.
-                        // For now, let's just initialize with server data, and if local storage exists, it overwrites (assuming it's newer draft).
                         loadedData = { ...loadedData, ...parsed }
                     } catch (e) {
                         console.error("Failed to parse saved data", e)
@@ -82,7 +70,12 @@ export default function OnboardingPage() {
 
                 setData(loadedData)
 
-                if (savedStep) setCurrentStepIndex(parseInt(savedStep))
+                if (savedStep) {
+                    const stepIdx = parseInt(savedStep);
+                    if (stepIdx < ONBOARDING_STEPS.length) {
+                        setCurrentStepIndex(stepIdx)
+                    }
+                }
                 if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted))
                 if (savedTestMode) setTestMode(savedTestMode === 'true')
 
@@ -147,9 +140,6 @@ export default function OnboardingPage() {
             if (!data.companyName) updateData({ companyName: 'Test Company' })
             if (!data.website) updateData({ website: 'https://example.com' })
 
-            // Wait a tick for state to update? 
-            // Actually, we need to pass the updated data directly to save function
-            // modifying local data variable for the save call
             const dataToSave = {
                 ...data,
                 companyType: data.companyType || 'software',
@@ -231,15 +221,12 @@ export default function OnboardingPage() {
             faviconUrl={faviconUrl}
             testMode={testMode}
             setTestMode={setTestMode}
+            isScraping={isScraping}
         >
-            {currentStep.id === 'company-basics' && <CompanyBasics data={data} updateData={updateData} />}
-            {currentStep.id === 'founding-story' && <FoundingStory data={data} updateData={updateData} />}
-            {currentStep.id === 'product-strategy' && <ProductStrategy data={data} updateData={updateData} />}
-            {currentStep.id === 'customer-evidence' && <CustomerEvidence data={data} updateData={updateData} />}
-            {currentStep.id === 'worldview-intelligence' && <WorldviewIntelligence data={data} updateData={updateData} />}
+            {currentStep.id === 'company-basics' && <CompanyBasics data={data} updateData={updateData} isScraping={isScraping} setIsScraping={setIsScraping} setFaviconUrl={setFaviconUrl} />}
+            {currentStep.id === 'offer-strategy' && <ProductStrategy data={data} updateData={updateData} />}
             {currentStep.id === 'voice-dna' && <VoiceDNA data={data} updateData={updateData} />}
-            {currentStep.id === 'gtm-reality' && <CurrentGTM data={data} updateData={updateData} />}
-            {currentStep.id === 'success-definition' && <SuccessDefinition data={data} updateData={updateData} />}
+            {currentStep.id === 'goal' && <Goal data={data} updateData={updateData} />}
         </OnboardingLayout>
     )
 }

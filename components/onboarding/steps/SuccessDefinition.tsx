@@ -32,10 +32,10 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
 
                 {/* Next 90 Days */}
                 <div className="space-y-6">
-                    <h3 className="font-medium text-[#4A4A4A]">What Success Looks Like (Next 90 Days)</h3>
+                    <h3 className="text-xl font-bold text-[#4A4A4A]">What Success Looks Like (Next 90 Days)</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label htmlFor="rev-goal">Revenue Goal ($)</Label>
+                            <Label htmlFor="rev-goal" className="text-base">Revenue Goal ($)</Label>
                             <Input
                                 id="rev-goal"
                                 value={data.revenueGoal}
@@ -43,7 +43,7 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="cust-goal">Customer Goal (count)</Label>
+                            <Label htmlFor="cust-goal" className="text-base">Customer Goal (count)</Label>
                             <Input
                                 id="cust-goal"
                                 type="number"
@@ -53,7 +53,7 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="key-metric">Key metric (meetings, trials, etc)</Label>
+                        <Label htmlFor="key-metric" className="text-base">Key metric (meetings, trials, etc)</Label>
                         <Input
                             id="key-metric"
                             placeholder="e.g. 10 meetings"
@@ -66,13 +66,13 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                 <div className="h-px bg-gray-100" />
 
                 {/* Pressure */}
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-base">Timeline Pressure: &ldquo;When do you need this working?&rdquo;</Label>
+                <div className="space-y-6">
+                    <div className="space-y-4">
+                        <Label className="text-lg font-bold text-[#4A4A4A]">Timeline Pressure: &ldquo;When do you need this working?&rdquo;</Label>
                         <RadioGroup
                             value={data.timelinePressure}
                             onValueChange={(val) => updateData({ timelinePressure: val })}
-                            className="grid gap-3 pt-2"
+                            className="grid gap-3 pt-1"
                         >
                             {[
                                 "NOW (burning cash, urgent)",
@@ -82,7 +82,7 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                             ].map((opt) => (
                                 <div key={opt} className="flex items-center space-x-2">
                                     <RadioGroupItem value={opt} id={opt} />
-                                    <Label htmlFor={opt} className="font-normal cursor-pointer">{opt}</Label>
+                                    <Label htmlFor={opt} className="font-normal cursor-pointer text-gray-600">{opt}</Label>
                                 </div>
                             ))}
                         </RadioGroup>
@@ -92,13 +92,13 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                 <div className="h-px bg-gray-100" />
 
                 {/* Meeting Quality */}
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="good-meeting" className="text-base">What qualifies as a &apos;good&apos; meeting?</Label>
-                        <p className="text-sm text-muted-foreground">Examples: Decision-maker level, $1M+ revenue, specific pain point present</p>
+                <div className="space-y-6">
+                    <div className="space-y-3">
+                        <Label htmlFor="good-meeting" className="text-lg font-bold text-[#4A4A4A]">What qualifies as a &apos;good&apos; meeting?</Label>
+                        <p className="text-sm text-muted-foreground font-normal">Examples: Decision-maker level, $1M+ revenue, specific pain point present</p>
                         <Textarea
                             id="good-meeting"
-                            className="min-h-[100px]"
+                            className="min-h-[120px]"
                             placeholder="Enter details..."
                             value={data.goodMeetingDefinition}
                             onChange={(e) => updateData({ goodMeetingDefinition: e.target.value })}
@@ -109,10 +109,10 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                 <div className="h-px bg-gray-100" />
 
                 {/* Quit Conditions */}
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-base">What would make you cancel in 30 days?</Label>
-                        <div className="grid gap-3 pt-2">
+                <div className="space-y-6">
+                    <div className="space-y-4">
+                        <Label className="text-lg font-bold text-[#4A4A4A]">What would make you cancel in 30 days?</Label>
+                        <div className="grid gap-3 pt-1">
                             {[
                                 "No quality conversations",
                                 "Conversations but no deals",
@@ -125,21 +125,12 @@ export function SuccessDefinition({ data, updateData }: SuccessDefinitionProps) 
                                         checked={data.quitConditions?.includes(opt)}
                                         onCheckedChange={() => toggleQuitCondition(opt)}
                                     />
-                                    <Label htmlFor={`quit-${opt}`} className="font-normal cursor-pointer">{opt}</Label>
+                                    <Label htmlFor={`quit-${opt}`} className="font-normal cursor-pointer text-gray-600">{opt}</Label>
                                 </div>
                             ))}
-                            <div className="flex items-center space-x-2">
-                                <Label className="font-normal w-12">Other:</Label>
-                                <Input
-                                    className="h-8"
-                                    value={data.quitConditionOther || ''}
-                                    onChange={(e) => updateData({ quitConditionOther: e.target.value })}
-                                />
-                            </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </StepContent>
     )

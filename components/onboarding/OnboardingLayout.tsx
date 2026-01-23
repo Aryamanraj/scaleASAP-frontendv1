@@ -17,6 +17,7 @@ interface OnboardingLayoutProps {
     faviconUrl?: string
     testMode: boolean
     setTestMode: (value: boolean) => void
+    isScraping?: boolean
 }
 
 export function OnboardingLayout({
@@ -30,7 +31,8 @@ export function OnboardingLayout({
     companyType,
     faviconUrl,
     testMode,
-    setTestMode
+    setTestMode,
+    isScraping
 }: OnboardingLayoutProps) {
     const WorkspaceIcon = companyType === 'software' ? WindowIcon : BuildingOfficeIcon
 
@@ -55,6 +57,7 @@ export function OnboardingLayout({
                         completedSteps={completedSteps}
                         onStepClick={onStepClick}
                         companyType={companyType}
+                        steps={ONBOARDING_STEPS}
                     />
                 </div>
 
@@ -119,9 +122,10 @@ export function OnboardingLayout({
                         )}
                         <Button
                             onClick={onNext}
-                            className="min-w-[140px] shadow-lg shadow-[#43B97B]/10 h-9 px-8 bg-[#43B97B] hover:bg-[#3aa86d] text-white"
+                            disabled={isScraping}
+                            className="min-w-[140px] shadow-lg shadow-[#43B97B]/10 h-9 px-8 bg-[#43B97B] hover:bg-[#3aa86d] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Continue
+                            {isScraping ? 'Analyzing...' : 'Continue'}
                         </Button>
                     </div>
                 </div>

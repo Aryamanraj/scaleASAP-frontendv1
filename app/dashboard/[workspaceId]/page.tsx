@@ -120,7 +120,7 @@ export default function DashboardPage() {
                         showFollowUpDiscovery ? (
                             <DiscoveryChat
                                 workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'Sahil'}
+                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
                                 onExperimentsCreated={handleExperimentsCreated}
                                 isFollowUp={true}
                                 previousExperiments={experiments}
@@ -137,14 +137,14 @@ export default function DashboardPage() {
                         ) : hasChatHistory ? (
                             <DiscoveryChat
                                 workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'Sahil'}
+                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
                                 onExperimentsCreated={handleExperimentsCreated}
                                 initialChatHistory={workspace.discovery_chat_history}
                             />
                         ) : (
                             <DiscoveryChat
                                 workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'Sahil'}
+                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
                                 onExperimentsCreated={handleExperimentsCreated}
                             />
                         )
@@ -161,7 +161,10 @@ export default function DashboardPage() {
                         </div>
                     )}
                     {currentTab === 'settings' && (
-                        <Settings workspace={workspace} userEmail={userEmail || 'Guest'} />
+                        <Settings
+                            workspace={workspace}
+                            userEmail={userEmail || 'Guest'}
+                        />
                     )}
                 </div>
             </main>

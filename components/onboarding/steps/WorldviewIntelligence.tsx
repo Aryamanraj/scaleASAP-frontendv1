@@ -18,11 +18,11 @@ export function WorldviewIntelligence({ data, updateData }: WorldviewIntelligenc
         >
             <div className="space-y-8">
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <Label htmlFor="metaphors" className="text-base">
                         When your best customer describes their day-to-day struggles, what metaphors do they use?
                     </Label>
-                    <p className="text-sm text-muted-foreground">Examples: Farmers say &ldquo;drought years&rdquo; / Founders say &ldquo;runway&rdquo; / Operations say &ldquo;putting out fires&rdquo;</p>
+                    <p className="text-sm text-muted-foreground font-normal">Examples: Farmers say &ldquo;drought years&rdquo; / Founders say &ldquo;runway&rdquo; / Operations say &ldquo;putting out fires&rdquo;</p>
                     <Textarea
                         id="metaphors"
                         className="min-h-[100px]"
@@ -32,11 +32,11 @@ export function WorldviewIntelligence({ data, updateData }: WorldviewIntelligenc
                     />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <Label htmlFor="pride" className="text-base">
                         What are they proud of that others wouldn&apos;t understand?
                     </Label>
-                    <p className="text-sm text-muted-foreground">What identity do they hold that matters to them?</p>
+                    <p className="text-sm text-muted-foreground font-normal">What identity do they hold that matters to them?</p>
                     <Textarea
                         id="pride"
                         className="min-h-[100px]"
@@ -46,11 +46,11 @@ export function WorldviewIntelligence({ data, updateData }: WorldviewIntelligenc
                     />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <Label htmlFor="frustration" className="text-base">
                         What frustration feels uniquely theirs?
                     </Label>
-                    <p className="text-sm text-muted-foreground">Not generic pain - what specific thing makes them different?</p>
+                    <p className="text-sm text-muted-foreground font-normal">Not generic pain - what specific thing makes them different?</p>
                     <Textarea
                         id="frustration"
                         className="min-h-[100px]"
@@ -60,12 +60,13 @@ export function WorldviewIntelligence({ data, updateData }: WorldviewIntelligenc
                     />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <Label htmlFor="onePhrase" className="text-base">
                         If you could only use one phrase to describe their world, what is it?
                     </Label>
                     <Textarea
                         id="onePhrase"
+                        className="min-h-[80px]"
                         placeholder="Enter details..."
                         value={data.onePhraseWorld}
                         onChange={(e) => updateData({ onePhraseWorld: e.target.value })}

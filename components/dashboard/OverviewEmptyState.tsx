@@ -10,8 +10,8 @@ interface OverviewEmptyStateProps {
 }
 
 export function OverviewEmptyState({ userName, onStartDiscovery }: OverviewEmptyStateProps) {
-    const firstName = userName && userName !== 'there' ? userName.split(' ')[0] : 'Sahil'
-    const headline = `Hey ${firstName}, Let&apos;s Find your ICP`
+    const firstName = userName && userName !== 'there' ? userName.split(' ')[0] : 'there'
+    const headline = `Hey ${firstName === 'there' ? 'there' : firstName}, Let's Find your ICP`
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in slide-in-from-bottom-4 duration-500">

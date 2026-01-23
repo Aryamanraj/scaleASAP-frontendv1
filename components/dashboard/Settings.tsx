@@ -5,36 +5,42 @@ import {
     UserIcon as UserOutline,
     ShieldCheckIcon as ShieldCheckOutline,
     LightBulbIcon as LightBulbOutline,
+    DocumentTextIcon as DocumentTextOutline,
     ChevronRightIcon,
     PhoneIcon,
     EnvelopeIcon,
-    ArrowLeftStartOnRectangleIcon
+    ArrowLeftStartOnRectangleIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserSolid,
     ShieldCheckIcon as ShieldCheckSolid,
     LightBulbIcon as LightBulbSolid,
+    DocumentTextIcon as DocumentTextSolid,
     CheckCircleIcon as CheckCircleSolid
 } from '@heroicons/react/24/solid'
 import { cn } from '@/lib/utils'
 import { Workspace } from '@/app/actions/workspaces'
 import { getOnboardingData } from '@/app/actions/onboarding'
 import { OnboardingData } from '@/lib/onboarding-data'
+import { OtherInfoPopup } from './OtherInfoPopup'
+import { Button } from '@/components/ui/button'
 
 interface SettingsProps {
     workspace: Workspace
     userEmail: string
 }
 
-type TabType = 'profile' | 'intelligence' | 'security'
+type TabType = 'profile' | 'intelligence' | 'other-info' | 'security'
 
 export function Settings({ workspace, userEmail }: SettingsProps) {
     const [activeTab, setActiveTab] = useState<TabType>('profile')
     const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
     const [loading, setLoading] = useState(false)
+    const [isOtherInfoOpen, setIsOtherInfoOpen] = useState(false)
 
     useEffect(() => {
-        if (activeTab === 'intelligence' && !onboardingData) {
+        if ((activeTab === 'intelligence' || activeTab === 'other-info') && !onboardingData) {
             const load = async () => {
                 setLoading(true)
                 const data = await getOnboardingData(workspace.id)
@@ -48,8 +54,15 @@ export function Settings({ workspace, userEmail }: SettingsProps) {
     const tabs = [
         { id: 'profile', outline: UserOutline, solid: UserSolid, label: 'My Profile' },
         { id: 'intelligence', outline: LightBulbOutline, solid: LightBulbSolid, label: 'Intelligence' },
+        { id: 'other-info', outline: DocumentTextOutline, solid: DocumentTextSolid, label: 'Other Information' },
         { id: 'security', outline: ShieldCheckOutline, solid: ShieldCheckSolid, label: 'Security' },
     ]
+
+    const updateOnboardingData = (updates: Partial<OnboardingData>) => {
+        if (onboardingData) {
+            setOnboardingData({ ...onboardingData, ...updates })
+        }
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -96,7 +109,104 @@ export function Settings({ workspace, userEmail }: SettingsProps) {
                         loading={loading}
                     />
                 )}
+                {activeTab === 'other-info' && (
+                    <OtherInfoSection
+                        onboardingData={onboardingData}
+                        loading={loading}
+                        onOpenPopup={() => setIsOtherInfoOpen(true)}
+                    />
+                )}
                 {activeTab === 'security' && <SecuritySection />}
+            </div>
+
+            {onboardingData && (
+                <OtherInfoPopup
+                    workspaceId={workspace.id}
+                    data={onboardingData}
+                    updateData={updateOnboardingData}
+                    isOpen={isOtherInfoOpen}
+                    onClose={() => setIsOtherInfoOpen(false)}
+                />
+            )}
+        </div>
+    )
+}
+
+function calculateConfidenceScore(data: OnboardingData): number {
+    let score = 50; // Base score from onboarding
+    if (data.triggerMoment) score += 10;
+    if (data.founderRole) score += 2;
+    if (data.teamSize) score += 2;
+    if (data.runway) score += 1;
+    if (data.hasPayingCustomers !== null) score += 5;
+    if (data.bestCustomers?.[0]?.role) score += 10;
+    if (data.bestCustomers?.[0]?.statedProblem) score += 5;
+    if (data.customerMetaphors) score += 5;
+    if (data.onePhraseWorld) score += 5;
+    if (data.revenueGoal) score += 5;
+    return Math.min(score, 100);
+}
+
+function OtherInfoSection({ onboardingData, loading, onOpenPopup }: { onboardingData: OnboardingData | null, loading: boolean, onOpenPopup: () => void }) {
+    if (loading) return <div>Loading...</div>
+
+    const score = onboardingData ? calculateConfidenceScore(onboardingData) : 0;
+
+    return (
+        <div className="max-w-3xl space-y-6">
+            <div className="bg-white rounded-2xl border border-[#EEEEEE] p-8 shadow-sm">
+                <div className="flex items-start gap-6">
+                    <div className="p-4 bg-[#43B97B]/10 rounded-2xl">
+                        <SparklesIcon className="size-8 text-[#43B97B]" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-2xl font-bold text-[#333333]">Deep Profile Your Company</h3>
+                            {onboardingData && (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Confidence Score</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg font-bold text-[#43B97B]">{score}%</span>
+                                        <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-[#43B97B] transition-all duration-1000"
+                                                style={{ width: `${score}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-gray-500 leading-relaxed mb-6">
+                            Completing these questions helps our AI understand your business on a deeper level,
+                            allowing it to craft much more effective outreach strategies and find higher quality leads.
+                        </p>
+                        <Button
+                            onClick={onOpenPopup}
+                            className="bg-[#43B97B] hover:bg-[#3aa86d] text-white px-8 rounded-xl h-11 transition-all font-bold shadow-lg shadow-[#43B97B]/10 flex items-center gap-2"
+                        >
+                            <SparklesIcon className="size-4" />
+                            {onboardingData?.triggerMoment ? 'Edit Deep Profile' : 'Complete Deep Profile'}
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10 border-t border-gray-50 pt-10">
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">💡</div>
+                        <div>
+                            <p className="text-xs font-bold text-[#333333]">Better Strategies</p>
+                            <p className="text-[10px] text-gray-400">AI learns your unique worldview</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">🎯</div>
+                        <div>
+                            <p className="text-xs font-bold text-[#333333]">Sharper Lead Discovery</p>
+                            <p className="text-[10px] text-gray-400">Based on real customer evidence</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )
@@ -323,10 +433,15 @@ function IntelligenceSection({ onboardingData, loading }: { onboardingData: Onbo
         {
             title: "Voice DNA",
             fields: [
-                { label: "Words Often Used", value: onboardingData.wordsUsed },
-                { label: "Words Never Used", value: onboardingData.wordsNeverUsed },
-                { label: "Emoji Usage", value: onboardingData.emojiUsage },
-                { label: "Chaos Test Response", value: onboardingData.chaosTest },
+                { label: "Content Dump", value: onboardingData.contentExamples },
+            ]
+        },
+        {
+            title: "Goals",
+            fields: [
+                { label: "Primary Goal", value: onboardingData.onboardingGoal },
+                { label: "Target ICP Guess", value: onboardingData.targetICP },
+                { label: "ICP Confidence", value: `${onboardingData.icpConfidence}%` },
             ]
         }
     ]

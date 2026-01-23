@@ -1,48 +1,90 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StepContent } from "../StepContent"
 import { OnboardingData } from "@/lib/onboarding-data"
-import { GlobeAltIcon, BuildingOfficeIcon, WindowIcon, ArrowPathIcon, DocumentTextIcon, ShieldCheckIcon } from "@heroicons/react/24/outline"
+import { GlobeAltIcon, BuildingOfficeIcon, WindowIcon, ArrowPathIcon, DocumentTextIcon, ShieldCheckIcon, SparklesIcon } from "@heroicons/react/24/outline"
 import { SocialIcon } from "../SocialIcon"
 import { scrapeWebsite } from "@/app/actions/scrape"
 
 interface CompanyBasicsProps {
     data: OnboardingData
     updateData: (updates: Partial<OnboardingData>) => void
+    isScraping?: boolean
+    setIsScraping?: (value: boolean) => void
+    setFaviconUrl?: (url: string | undefined) => void
 }
 
-export function CompanyBasics({ data, updateData }: CompanyBasicsProps) {
-    const [isScraping, setIsScraping] = useState(false)
+export function CompanyBasics({ data, updateData, isScraping = false, setIsScraping, setFaviconUrl }: CompanyBasicsProps) {
+    const [scrapingStatus, setScrapingStatus] = useState<string>("")
+    const lastScrapedUrl = useRef<string>("")
 
     const handleWebsiteBlur = async () => {
         const url = data.website;
         if (!url || url === "https://" || url.length < 10) return;
 
-        setIsScraping(true);
+        // Don't re-scrape the same URL
+        if (url === lastScrapedUrl.current) return;
+        lastScrapedUrl.current = url;
+
+        // Clear previous socials immediately when starting a new scrape
+        updateData({
+            linkedin: "",
+            twitter: "",
+            youtube: "",
+            telegram: "",
+            slack: "",
+            termsUrl: "",
+            privacyUrl: "",
+            companyDescription: "",
+            favicon_url: "",
+            website_scrape: ""
+        });
+
+        setIsScraping?.(true);
+        setScrapingStatus("Fetching website data...");
+
         try {
             const result = await scrapeWebsite(url);
             if (result.success && result.data) {
                 console.log("Website scraped successfully");
                 const parsed = JSON.parse(result.data);
+
+                // Update favicon immediately
+                if (parsed.favicon) {
+                    setFaviconUrl?.(parsed.favicon);
+                    updateData({ favicon_url: parsed.favicon });
+                }
+
+                setScrapingStatus("Extracting social profiles...");
+
+                // Update socials immediately
+                updateData({
+                    linkedin: parsed.socials?.linkedin || "",
+                    twitter: parsed.socials?.twitter || "",
+                    youtube: parsed.socials?.youtube || "",
+                    telegram: parsed.socials?.telegram || "",
+                    slack: parsed.socials?.slack || "",
+                    termsUrl: parsed.policies?.terms || "",
+                    privacyUrl: parsed.policies?.privacy || ""
+                });
+
+                setScrapingStatus("Generating AI summary...");
+
+                // Update the full scrape data and description
                 updateData({
                     website_scrape: result.data,
-                    favicon_url: parsed.favicon || "",
-                    linkedin: parsed.socials?.linkedin || data.linkedin,
-                    twitter: parsed.socials?.twitter || data.twitter,
-                    youtube: parsed.socials?.youtube || data.youtube,
-                    telegram: parsed.socials?.telegram || data.telegram,
-                    slack: parsed.socials?.slack || data.slack,
-                    termsUrl: parsed.policies?.terms || data.termsUrl,
-                    privacyUrl: parsed.policies?.privacy || data.privacyUrl
+                    companyDescription: parsed.companyDescription || parsed.description || ""
                 });
             }
         } catch (error) {
             console.error("Scraping failed", error);
+            setScrapingStatus("");
         } finally {
-            setIsScraping(false);
+            setIsScraping?.(false);
+            setScrapingStatus("");
         }
     }
     return (
@@ -93,6 +135,27 @@ export function CompanyBasics({ data, updateData }: CompanyBasicsProps) {
                         />
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="userName">Your Name</Label>
+                            <Input
+                                id="userName"
+                                placeholder="John Doe"
+                                value={data.userName}
+                                onChange={(e) => updateData({ userName: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="personalLinkedin">Personal LinkedIn URL</Label>
+                            <Input
+                                id="personalLinkedin"
+                                placeholder="linkedin.com/in/johndoe"
+                                value={data.personalLinkedin}
+                                onChange={(e) => updateData({ personalLinkedin: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="website">Website</Label>
                         <div className="relative flex items-center">
@@ -114,6 +177,27 @@ export function CompanyBasics({ data, updateData }: CompanyBasicsProps) {
                                 className="pl-[6.5rem]"
                             />
                         </div>
+
+                        {/* Scraping Status Banner */}
+                        {isScraping && scrapingStatus && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#43B97B]/10 border border-[#43B97B]/20 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <ArrowPathIcon className="h-4 w-4 animate-spin text-[#43B97B]" />
+                                <span className="text-sm font-medium text-[#43B97B]">{scrapingStatus}</span>
+                            </div>
+                        )}
+
+                        {/* AI Summary Box */}
+                        {data.companyDescription && !isScraping && (
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-[#43B97B]/5 to-transparent border border-[#43B97B]/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#43B97B]/10 flex items-center justify-center">
+                                    <SparklesIcon className="h-4 w-4 text-[#43B97B]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-[#43B97B] uppercase tracking-wide mb-1">AI Summary</p>
+                                    <p className="text-sm text-[#4A4A4A] leading-relaxed">{data.companyDescription}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -201,47 +285,6 @@ export function CompanyBasics({ data, updateData }: CompanyBasicsProps) {
                                             placeholder="workspace.slack.com"
                                             value={data.slack}
                                             onChange={(e) => updateData({ slack: e.target.value })}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Legal/Policies - Only show if any policy links are found */}
-                    {(data.termsUrl || data.privacyUrl) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                            {data.termsUrl && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="termsUrl">Terms & Conditions URL</Label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                            <DocumentTextIcon className="h-4 w-4" />
-                                        </div>
-                                        <Input
-                                            id="termsUrl"
-                                            placeholder="https://example.com/terms"
-                                            value={data.termsUrl}
-                                            onChange={(e) => updateData({ termsUrl: e.target.value })}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {data.privacyUrl && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="privacyUrl">Privacy Policy URL</Label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                            <ShieldCheckIcon className="h-4 w-4" />
-                                        </div>
-                                        <Input
-                                            id="privacyUrl"
-                                            placeholder="https://example.com/privacy"
-                                            value={data.privacyUrl}
-                                            onChange={(e) => updateData({ privacyUrl: e.target.value })}
                                             className="pl-10"
                                         />
                                     </div>
