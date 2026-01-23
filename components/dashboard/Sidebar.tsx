@@ -10,14 +10,16 @@ import {
     ChevronUpDownIcon,
     ArrowTopRightOnSquareIcon,
     Cog6ToothIcon as Cog6ToothOutline,
-    ArrowLeftStartOnRectangleIcon
+    ArrowLeftStartOnRectangleIcon,
+    MegaphoneIcon as MegaphoneOutline
 } from '@heroicons/react/24/outline'
 import {
     Squares2X2Icon as Squares2X2Solid,
     BeakerIcon as BeakerSolid,
     MagnifyingGlassIcon as MagnifyingGlassSolid,
     Cog6ToothIcon as Cog6ToothSolid,
-    CheckIcon as CheckSolid
+    CheckIcon as CheckSolid,
+    MegaphoneIcon as MegaphoneSolid
 } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -29,15 +31,17 @@ interface SidebarProps {
     allWorkspaces: Workspace[]
     currentTab: string
     onTabChange: (tab: string) => void
+    className?: string
 }
 
 const navItems = [
     { id: 'overview', outline: Squares2X2Outline, solid: Squares2X2Solid, label: 'Overview' },
     { id: 'experiments', outline: BeakerOutline, solid: BeakerSolid, label: 'Experiments' },
+    { id: 'campaigns', outline: MegaphoneOutline, solid: MegaphoneSolid, label: 'Campaigns' },
     { id: 'library', outline: MagnifyingGlassOutline, solid: MagnifyingGlassSolid, label: 'Lead Library' },
 ]
 
-export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange }: SidebarProps) {
+export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange, className }: SidebarProps) {
     const router = useRouter()
     const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
@@ -70,7 +74,7 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange }: S
     }, [])
 
     return (
-        <aside className="w-64 border border-[#EEEEEE] bg-white rounded-2xl shadow-sm flex flex-col h-full overflow-hidden relative">
+        <aside className={cn("w-64 border border-[#EEEEEE] bg-white rounded-2xl shadow-sm flex flex-col h-full overflow-hidden relative", className)}>
             {/* Workspace Switcher Trigger */}
             <div className="p-4 mb-2 relative" ref={switcherRef}>
                 <button

@@ -15,6 +15,10 @@ import { getExperiments, Experiment } from '@/app/actions/workspaces'
 import { ExperimentDetailCurtain } from '@/components/dashboard/ExperimentDetailCurtain'
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup'
 import { saveDiscoveryFeedback } from '@/app/actions/workspaces'
+import { getCampaigns, Campaign, createCampaign } from '@/app/actions/campaigns'
+import { CampaignsList } from '@/components/dashboard/CampaignsList'
+import { CampaignDetailCurtain } from '@/components/dashboard/CampaignDetailCurtain'
+import { Lead } from '@/app/actions/leads'
 
 export default function DashboardPage() {
     const params = useParams()
@@ -32,6 +36,8 @@ export default function DashboardPage() {
     const [hasJustCreatedExperiments, setHasJustCreatedExperiments] = useState(false)
     const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
     const [showFeedback, setShowFeedback] = useState(false)
+    const [campaigns, setCampaigns] = useState<Campaign[]>([])
+    const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
 
     useEffect(() => {
         const load = async () => {
@@ -67,24 +73,29 @@ export default function DashboardPage() {
         load()
     }, [workspaceId, router])
 
-    // Load experiments
+    // Load experiments and campaigns
     useEffect(() => {
-        const loadExperiments = async () => {
-            const exps = await getExperiments(workspaceId)
+        const loadData = async () => {
+            const [exps, camps] = await Promise.all([
+                getExperiments(workspaceId),
+                getCampaigns(workspaceId)
+            ])
             setExperiments(exps)
+            setCampaigns(camps)
             // If we have experiments but haven't just created them, don't show the zero state
             if (exps.length > 0 && !hasJustCreatedExperiments) {
                 setHasJustCreatedExperiments(false)
             }
         }
-        loadExperiments()
+        loadData()
     }, [workspaceId, hasJustCreatedExperiments])
 
     const handleTabChange = (tab: string) => {
         setCurrentTab(tab)
-        // Close curtain when switching away from experiments tab
-        if (tab !== 'experiments' && selectedExperiment) {
-            setSelectedExperiment(null)
+        // Close curtains when switching tabs
+        if (tab !== 'experiments') setSelectedExperiment(null)
+        if (tab !== 'campaigns') {
+            setSelectedCampaign(null)
         }
     }
 
@@ -104,13 +115,24 @@ export default function DashboardPage() {
         }
     }
 
+    const handleCreateCampaign = async (name: string, experimentId: string) => {
+        try {
+            const newCampaign = await createCampaign(workspaceId, experimentId, name)
+            setCampaigns([newCampaign, ...campaigns])
+            setCurrentTab('campaigns')
+            setSelectedCampaign(newCampaign)
+        } catch (error) {
+            console.error('Failed to create campaign:', error)
+        }
+    }
+
     // Check if we have discovery chat history
     const hasChatHistory = workspace?.discovery_chat_history && workspace.discovery_chat_history.length > 0
 
     if (loading || !workspace) return null // loading.tsx handles this
 
     return (
-        <div className="flex h-screen bg-[#F9FAFB] p-2 gap-2 overflow-hidden relative">
+        <div className="flex h-screen bg-[#F9FAFB] p-2 overflow-hidden relative">
             {workspace.onboarding_status !== 'complete' && (
                 <OnboardingGuard workspace={workspace} />
             )}
@@ -120,7 +142,10 @@ export default function DashboardPage() {
                 allWorkspaces={allWorkspaces}
                 currentTab={currentTab}
                 onTabChange={handleTabChange}
+                className="shrink-0"
             />
+
+            <div className="w-2 shrink-0" />
 
             <main className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#EEEEEE] shadow-sm relative">
                 <div className={cn(
@@ -171,6 +196,19 @@ export default function DashboardPage() {
                             />
                         )
                     )}
+                    {currentTab === 'campaigns' && (
+                        <div className="flex flex-col h-full">
+                            <CampaignsList
+                                campaigns={campaigns}
+                                experiments={experiments}
+                                onCampaignSelect={(c) => {
+                                    setSelectedCampaign(c)
+                                    setSelectedExperiment(null)
+                                }}
+                                selectedId={selectedCampaign?.id}
+                            />
+                        </div>
+                    )}
                     {currentTab === 'library' && (
                         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
                             <div className="size-16 bg-gray-100 rounded-full flex items-center justify-center">
@@ -191,11 +229,23 @@ export default function DashboardPage() {
                 </div>
             </main>
 
-            <ExperimentDetailCurtain
-                experiment={selectedExperiment}
-                isOpen={!!selectedExperiment}
-                onClose={() => setSelectedExperiment(null)}
-            />
+            {(selectedExperiment || selectedCampaign) && (
+                <div className="flex shrink-0 ml-2 animate-in slide-in-from-right-4 duration-500">
+                    <ExperimentDetailCurtain
+                        experiment={selectedExperiment}
+                        isOpen={!!selectedExperiment}
+                        onClose={() => setSelectedExperiment(null)}
+                        onCreateCampaign={handleCreateCampaign}
+                    />
+
+                    <CampaignDetailCurtain
+                        campaign={selectedCampaign}
+                        experiment={experiments.find(e => e.id === selectedCampaign?.experiment_id) || null}
+                        isOpen={!!selectedCampaign}
+                        onClose={() => setSelectedCampaign(null)}
+                    />
+                </div>
+            )}
 
             {showFeedback && (
                 <FeedbackPopup
