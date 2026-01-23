@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 import { ExperimentsList } from '@/components/dashboard/ExperimentsList'
 import { getExperiments, Experiment } from '@/app/actions/workspaces'
 import { ExperimentDetailCurtain } from '@/components/dashboard/ExperimentDetailCurtain'
+import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup'
+import { saveDiscoveryFeedback } from '@/app/actions/workspaces'
 
 export default function DashboardPage() {
     const params = useParams()
@@ -29,6 +31,7 @@ export default function DashboardPage() {
     const [experiments, setExperiments] = useState<Experiment[]>([])
     const [hasJustCreatedExperiments, setHasJustCreatedExperiments] = useState(false)
     const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
+    const [showFeedback, setShowFeedback] = useState(false)
 
     useEffect(() => {
         const load = async () => {
@@ -48,6 +51,18 @@ export default function DashboardPage() {
             setAllWorkspaces(list)
             setUserEmail(user?.email || null)
             setLoading(false)
+
+            // Check if we should show feedback on mount (e.g. if they just created and refreshed)
+            const feedbackCollected = localStorage.getItem(`feedback_collected_${workspaceId}`)
+            const feedbackDismissed = localStorage.getItem(`feedback_dismissed_${workspaceId}`)
+            if (!feedbackCollected && !feedbackDismissed) {
+                // If we have experiments, maybe they are returning to a session where they haven't given feedback
+                // But let's only do it if they have at least 5 experiments (as per user request "like 5 experiment generated")
+                const exps = await getExperiments(workspaceId)
+                if (exps.length >= 5) {
+                    setShowFeedback(true)
+                }
+            }
         }
         load()
     }, [workspaceId, router])
@@ -80,6 +95,13 @@ export default function DashboardPage() {
         // Switch to experiments tab to show the list
         handleTabChange('experiments')
         setShowFollowUpDiscovery(false)
+
+        // Trigger feedback popup after a short delay so user can see the experiments
+        if (exps.length >= 5) {
+            setTimeout(() => {
+                setShowFeedback(true)
+            }, 1500)
+        }
     }
 
     // Check if we have discovery chat history
@@ -174,6 +196,16 @@ export default function DashboardPage() {
                 isOpen={!!selectedExperiment}
                 onClose={() => setSelectedExperiment(null)}
             />
+
+            {showFeedback && (
+                <FeedbackPopup
+                    workspaceId={workspaceId}
+                    onDismiss={() => setShowFeedback(false)}
+                    onSubmit={async (rating, feedback) => {
+                        await saveDiscoveryFeedback(workspaceId, rating, feedback)
+                    }}
+                />
+            )}
         </div>
     )
 }

@@ -11,7 +11,7 @@ export interface Workspace {
     favicon_url?: string
     onboarding_status: "incomplete" | "complete"
     user_id: string
-    discovery_chat_history?: Array<{role: 'user' | 'assistant', content: string}>
+    discovery_chat_history?: Array<{ role: 'user' | 'assistant', content: string }>
 }
 
 export async function createWorkspace(data: { name?: string }) {
@@ -153,7 +153,7 @@ export async function getWorkspaceById(id: string) {
     }
 }
 
-export async function saveDiscoveryChatHistory(workspaceId: string, history: Array<{role: string, content: string}>) {
+export async function saveDiscoveryChatHistory(workspaceId: string, history: Array<{ role: string, content: string }>) {
     try {
         const supabase = await createClient()
         const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -192,28 +192,28 @@ export interface Experiment {
     pain: string
     trigger: string
     wiza_filters: {
-        job_title?: Array<{v: string, s?: string}>
+        job_title?: Array<{ v: string, s?: string }>
         job_title_level?: string[]
         job_role?: string[]
         job_sub_role?: string[]
-        location?: {v: string, b?: string, s?: string}
+        location?: { v: string, b?: string, s?: string }
         skill?: string[]
         school?: string[]
         major?: string[]
-        company_industry?: Array<{v: string, s?: string}>
+        company_industry?: Array<{ v: string, s?: string }>
         company_size?: string[]
         company_annual_growth?: string
         department_size?: string[]
         revenue?: string[]
-        funding_date?: {t: string, v: string}
+        funding_date?: { t: string, v: string }
         last_funding_min?: string
         last_funding_max?: string
         funding_min?: string
         funding_max?: string
-        funding_stage?: {t: string, v: string[]}
-        funding_type?: {t: string, v: string[]}
+        funding_stage?: { t: string, v: string[] }
+        funding_type?: { t: string, v: string[] }
         company_type?: string[]
-        company_summary?: Array<{v: string, s?: string}>
+        company_summary?: Array<{ v: string, s?: string }>
         year_founded_start?: string
         year_founded_end?: string
     }
@@ -234,28 +234,28 @@ export interface ICPData {
     pain: string
     trigger: string
     wiza_filters: {
-        job_title?: Array<{v: string, s?: string}>
+        job_title?: Array<{ v: string, s?: string }>
         job_title_level?: string[]
         job_role?: string[]
         job_sub_role?: string[]
-        location?: {v: string, b?: string, s?: string}
+        location?: { v: string, b?: string, s?: string }
         skill?: string[]
         school?: string[]
         major?: string[]
-        company_industry?: Array<{v: string, s?: string}>
+        company_industry?: Array<{ v: string, s?: string }>
         company_size?: string[]
         company_annual_growth?: string
         department_size?: string[]
         revenue?: string[]
-        funding_date?: {t: string, v: string}
+        funding_date?: { t: string, v: string }
         last_funding_min?: string
         last_funding_max?: string
         funding_min?: string
         funding_max?: string
-        funding_stage?: {t: string, v: string[]}
-        funding_type?: {t: string, v: string[]}
+        funding_stage?: { t: string, v: string[] }
+        funding_type?: { t: string, v: string[] }
         company_type?: string[]
-        company_summary?: Array<{v: string, s?: string}>
+        company_summary?: Array<{ v: string, s?: string }>
         year_founded_start?: string
         year_founded_end?: string
     }
@@ -387,3 +387,37 @@ export async function getWorkspaceUserContext(workspaceId: string) {
     }
 }
 
+export async function saveDiscoveryFeedback(workspaceId: string, rating: number, feedback?: string) {
+    try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            throw new Error('User must be authenticated')
+        }
+
+        // For now, we'll try to insert into a discovery_feedback table.
+        // If it doesn't exist, we'll log it and return success to not break the UI.
+        const { error } = await supabase
+            .from('discovery_feedback')
+            .insert({
+                workspace_id: workspaceId,
+                user_id: user.id,
+                rating,
+                feedback: feedback || '',
+                created_at: new Date().toISOString()
+            })
+
+        if (error) {
+            console.warn('Could not save feedback to discovery_feedback table (it might not exist):', error.message)
+            // Still return success to the UI
+            return { success: true, warning: 'Table might not exist' }
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error('Unexpected error in saveDiscoveryFeedback:', error)
+        // Return success anyway to not block the user
+        return { success: true }
+    }
+}

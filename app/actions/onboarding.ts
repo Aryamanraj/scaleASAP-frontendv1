@@ -9,6 +9,13 @@ import { createClient } from "@/lib/supabase/server"
 function isOnboardingComplete(data: OnboardingData, testMode: boolean = false): boolean {
     const hasBasics = !!(data.companyName && data.website && data.companyType && data.userName);
 
+    console.log(`[isOnboardingComplete] testMode: ${testMode}, hasBasics: ${hasBasics}`, {
+        companyName: data.companyName,
+        website: data.website,
+        companyType: data.companyType,
+        userName: data.userName
+    });
+
     // In test mode, only basics are required
     if (testMode) {
         return hasBasics;
@@ -21,11 +28,17 @@ function isOnboardingComplete(data: OnboardingData, testMode: boolean = false): 
     const hasVoice = !!data.contentExamples;
     const hasGoal = !!(data.onboardingGoal && data.targetICP);
 
-    return hasBasics && hasOffer && hasVoice && hasGoal;
+    const isComplete = hasBasics && hasOffer && hasVoice && hasGoal;
+    console.log(`[isOnboardingComplete] normalMode result: ${isComplete}`, {
+        hasOffer, hasVoice, hasGoal
+    });
+
+    return isComplete;
 }
 
-export async function saveOnboardingDataToMarkdown(workspaceId: string, data: OnboardingData, testMode: boolean = false) {
+export async function saveOnboardingDataToMarkdown(workspaceId: string, data: OnboardingData, testMode: boolean = false, isAdditionalInfo: boolean = false) {
     try {
+        console.log(`[saveOnboardingData] workspaceId: ${workspaceId}, testMode: ${testMode}, isAdditionalInfo: ${isAdditionalInfo}`);
         // 1. Save to Supabase
         const supabase = await createClient()
         const { data: existing } = await supabase.from('onboarding_data').select('id').eq('workspace_id', workspaceId).single()
@@ -53,7 +66,19 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
 
         // Sync basic info to parent workspaces table
         if (!error) {
-            const isComplete = isOnboardingComplete(data, testMode);
+            // Check current status
+            const { data: currentWs } = await supabase.from('workspaces').select('onboarding_status').eq('id', workspaceId).single()
+
+            // If it's additional info and already complete, keep it complete
+            // Otherwise, calculate based on data
+            let isComplete = currentWs?.onboarding_status === 'complete';
+
+            if (!isAdditionalInfo || !isComplete) {
+                isComplete = isOnboardingComplete(data, testMode);
+            }
+
+            console.log(`[saveOnboardingData] Final status for workspace ${workspaceId}: ${isComplete ? 'complete' : 'incomplete'}`);
+
             const { error: wsError } = await supabase
                 .from('workspaces')
                 .update({

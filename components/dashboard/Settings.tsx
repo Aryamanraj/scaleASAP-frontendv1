@@ -302,12 +302,10 @@ function ProfileSection({ workspace, userEmail }: { workspace: Workspace, userEm
                     <div className="flex items-center gap-5 mb-8">
                         <div className="size-16 bg-gray-50 rounded-2xl border border-[#EEEEEE] flex items-center justify-center p-3 relative shadow-inner">
                             {(workspace.favicon_url || workspace.website) ? (
-                                <Image
+                                <img
                                     src={workspace.favicon_url || `https://www.google.com/s2/favicons?domain=${workspace.website}&sz=128`}
                                     alt=""
-                                    width={64}
-                                    height={64}
-                                    className="h-full w-full object-contain"
+                                    className="h-16 w-16 object-contain"
                                 />
                             ) : (
                                 <span className="text-2xl font-bold text-gray-300">{workspace.name.charAt(0)}</span>

@@ -122,11 +122,9 @@ export default function WorkspacesPage() {
                                     <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-10 w-10 flex items-center justify-center overflow-hidden shrink-0 relative">
                                         <BuildingOfficeIcon className="h-6 w-6 text-gray-500 group-hover:text-[#43B97B] transition-colors absolute inset-0 m-auto" />
                                         {(ws.favicon_url || ws.website) && (
-                                            <NextImage
+                                            <img
                                                 src={ws.favicon_url || `https://www.google.com/s2/favicons?domain=${ws.website?.replace('https://', '').replace('http://', '').split('/')[0]}&sz=128`}
                                                 alt=""
-                                                width={24}
-                                                height={24}
                                                 className="h-6 w-6 object-contain relative z-10 transition-opacity duration-300 bg-gray-100 rounded-sm"
                                             />
                                         )}

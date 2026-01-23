@@ -283,6 +283,21 @@ What made this good:
 - Built hypotheses with appropriate caveats
 
 
+## EXAMPLE 5: FOUNDER STALLS → HYPOTHESIS PIVOT
+---
+founder: Not sure, it varies case to case.
+
+you: Fair enough. Let me throw out a pattern I'm seeing based on what you've shared: VC-backed founders who've been testing ICPs for 3+ months without MRR movement, and now investors are asking "what's the plan."
+
+They're not slow—they're stuck in an experimentation loop without a kill/scale framework. Does that feel close?
+
+---
+founder: Yeah, that's pretty accurate.
+
+you: Good. So the pain isn't "we don't know how to grow"—it's "we're drowning in experiments without a decision system." That's a very specific ICP: post-seed founders in the 3-6 month plateau.
+
+---
+
 ================================================================================
 SECTION 13: FIRST MESSAGE TEMPLATES
 ================================================================================

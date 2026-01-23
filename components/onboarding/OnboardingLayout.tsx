@@ -1,5 +1,7 @@
 "use client"
 
+import React, { useState } from "react"
+
 import { SidebarStepper } from "./SidebarStepper"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -35,6 +37,7 @@ export function OnboardingLayout({
     setTestMode,
     isScraping
 }: OnboardingLayoutProps) {
+    const [faviconError, setFaviconError] = useState(false)
     const WorkspaceIcon = companyType === 'software' ? WindowIcon : BuildingOfficeIcon
 
     return (
@@ -43,8 +46,13 @@ export function OnboardingLayout({
             <aside className="w-[320px] bg-white border border-[#EEEEEE] rounded-2xl shadow-sm flex-col hidden lg:flex shrink-0 z-30 relative overflow-hidden">
                 <div className="p-8 pb-4">
                     <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                        {faviconUrl ? (
-                            <Image src={faviconUrl} alt="Company Favicon" width={28} height={28} className="h-7 w-7 object-contain" />
+                        {(faviconUrl && !faviconError) ? (
+                            <img
+                                src={faviconUrl}
+                                alt="Company Favicon"
+                                className="h-7 w-7 object-contain"
+                                onError={() => setFaviconError(true)}
+                            />
                         ) : (
                             <WorkspaceIcon className="h-6 w-6 text-[#43B97B]" />
                         )}

@@ -35,7 +35,7 @@ export function OtherInfoPopup({ workspaceId, data, updateData, isOpen, onClose 
             setCurrentStepIndex(currentStepIndex + 1)
         } else {
             setIsSaving(true)
-            await saveOnboardingDataToMarkdown(workspaceId, data)
+            await saveOnboardingDataToMarkdown(workspaceId, data, false, true)
             setIsSaving(false)
             onClose()
         }
@@ -45,6 +45,13 @@ export function OtherInfoPopup({ workspaceId, data, updateData, isOpen, onClose 
         if (currentStepIndex > 0) {
             setCurrentStepIndex(currentStepIndex - 1)
         }
+    }
+
+    const handleSaveForLater = async () => {
+        setIsSaving(true)
+        await saveOnboardingDataToMarkdown(workspaceId, data, false, true)
+        setIsSaving(false)
+        onClose()
     }
 
     return (
@@ -95,7 +102,7 @@ export function OtherInfoPopup({ workspaceId, data, updateData, isOpen, onClose 
 
                     {/* Fixed Footer within the card */}
                     <div className="border-t border-gray-100 bg-white p-6 px-12 flex items-center justify-between shrink-0 z-20">
-                        <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-[#4A4A4A]">
+                        <Button variant="ghost" onClick={handleSaveForLater} className="text-muted-foreground hover:text-[#4A4A4A]">
                             Save for later
                         </Button>
 

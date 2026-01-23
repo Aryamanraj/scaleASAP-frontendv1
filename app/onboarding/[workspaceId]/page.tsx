@@ -136,15 +136,12 @@ export default function OnboardingPage() {
     const handleSaveLater = async () => {
         // In Test Mode, autofill missing basics to ensure success
         if (testMode) {
-            if (!data.companyType) updateData({ companyType: 'software' })
-            if (!data.companyName) updateData({ companyName: 'Test Company' })
-            if (!data.website) updateData({ website: 'https://example.com' })
-
             const dataToSave = {
                 ...data,
                 companyType: data.companyType || 'software',
                 companyName: data.companyName || 'Test Company',
-                website: data.website || 'https://example.com'
+                website: data.website || 'https://example.com',
+                userName: data.userName || 'Test User'
             }
 
             await saveWithData(dataToSave)

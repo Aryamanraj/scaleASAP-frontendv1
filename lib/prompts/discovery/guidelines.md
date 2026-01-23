@@ -224,6 +224,22 @@ Output: "ICP 1: Professional service providers whose admin eats 20+ hrs/week"
 Find the PATTERN, not the literal industry.
 
 --------------------------------------------------------------------------------
+ANTI-PATTERN 15: VAGUE TEMPLATED PROBES (STRICT BAN)
+--------------------------------------------------------------------------------
+**BANNED QUESTION PATTERNS:**
+- "What signals build up..."
+- "What's a specific moment when..."
+- "What internal pressure or event..."
+- "Could you describe a scenario where..."
+
+These are lazy, templated questions.
+**INSTEAD, USE THE CONTEXT:**
+- If worldview says "VC-backed founders" → ask about investor pressure, runway, growth metrics.
+- If they mentioned "MRR stagnant" → ask "How many months has MRR been flat?"
+- If they said "experimenting on ICPs" → ask "How many ICPs have you tested in the last 6 months?"
+**RULE:** Every question must reference something THEY said or something in their WORLDVIEW.
+
+--------------------------------------------------------------------------------
 ANTI-PATTERN 12: SINGLE-INDUSTRY ICPS (NEW)
 --------------------------------------------------------------------------------
 
@@ -423,3 +439,16 @@ PATTERN DISCOVERY CHECKLIST (before output):
 [ ] Can I articulate the TRIGGER PATTERN (not just "deadline")?
 [ ] Have I identified at least one BEHAVIORAL signal to target?
 [ ] Is at least one ICP based on MY hypothesis, not just their words?
+## REPETITION DETECTION (Stricter)
+--------------------------------------------------------------------------------
+If you've asked **2 questions** about the same topic and the answers haven't changed the direction:
+**STOP ASKING. SYNTHESIZE.**
+
+Example of FAILING:
+- Q1: "What's the trigger?"
+- A1: "Stagnant growth"
+- Q2: "What event happens before they reach out?"
+- A2: "They've been experimenting too long"
+- Q3: "What signals build up..." ← FAILURE. You already have the trigger.
+The trigger is: "Stagnant MRR + prolonged ICP experimentation + investor pressure."
+SYNTHESIZE IT. DON'T ASK AGAIN.
