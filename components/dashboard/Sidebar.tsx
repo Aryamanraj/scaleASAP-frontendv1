@@ -11,7 +11,8 @@ import {
     ArrowTopRightOnSquareIcon,
     Cog6ToothIcon as Cog6ToothOutline,
     ArrowLeftStartOnRectangleIcon,
-    MegaphoneIcon as MegaphoneOutline
+    MegaphoneIcon as MegaphoneOutline,
+    QuestionMarkCircleIcon as QuestionMarkCircleOutline
 } from '@heroicons/react/24/outline'
 import {
     Squares2X2Icon as Squares2X2Solid,
@@ -19,7 +20,8 @@ import {
     MagnifyingGlassIcon as MagnifyingGlassSolid,
     Cog6ToothIcon as Cog6ToothSolid,
     CheckIcon as CheckSolid,
-    MegaphoneIcon as MegaphoneSolid
+    MegaphoneIcon as MegaphoneSolid,
+    QuestionMarkCircleIcon as QuestionMarkCircleSolid
 } from '@heroicons/react/24/solid'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -219,6 +221,22 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange, cla
                         <Cog6ToothOutline className="size-4 shrink-0 text-gray-400 group-hover:text-gray-600" />
                     )}
                     <span>Settings</span>
+                </button>
+                <button
+                    onClick={() => onTabChange('help')}
+                    className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors group",
+                        currentTab === 'help'
+                            ? "bg-gray-100/80 text-[#333333]"
+                            : "text-gray-500 hover:text-[#333333] hover:bg-gray-100/50"
+                    )}
+                >
+                    {currentTab === 'help' ? (
+                        <QuestionMarkCircleSolid className="size-4 shrink-0 text-[#333333]" />
+                    ) : (
+                        <QuestionMarkCircleOutline className="size-4 shrink-0 text-gray-400 group-hover:text-gray-600" />
+                    )}
+                    <span>Help & Support</span>
                 </button>
                 <button
                     onClick={() => router.push('/workspaces')}

@@ -23,6 +23,7 @@ import { NewCampaignCurtain } from '@/components/dashboard/NewCampaignCurtain'
 import { Lead, getAllLeads } from '@/app/actions/leads'
 import { LeadsList } from '@/components/dashboard/LeadsList'
 import { Button } from '@/components/ui/button'
+import { HelpSupport } from '@/components/dashboard/HelpSupport'
 
 export default function DashboardPage() {
     const params = useParams()
@@ -245,6 +246,9 @@ export default function DashboardPage() {
                             workspace={workspace}
                             userEmail={userEmail || 'Guest'}
                         />
+                    )}
+                    {currentTab === 'help' && (
+                        <HelpSupport />
                     )}
                 </div>
             </main>
