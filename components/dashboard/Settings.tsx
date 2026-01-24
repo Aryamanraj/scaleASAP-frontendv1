@@ -1,7 +1,23 @@
 "use client"
 
+
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import { deleteWorkspace } from '@/app/actions/workspaces'
 import {
     UserIcon as UserOutline,
     ShieldCheckIcon as ShieldCheckOutline,
@@ -11,7 +27,8 @@ import {
     PhoneIcon,
     EnvelopeIcon,
     ArrowLeftStartOnRectangleIcon,
-    SparklesIcon
+    SparklesIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserSolid,
@@ -117,7 +134,7 @@ export function Settings({ workspace, userEmail }: SettingsProps) {
                         onOpenPopup={() => setIsOtherInfoOpen(true)}
                     />
                 )}
-                {activeTab === 'security' && <SecuritySection />}
+                {activeTab === 'security' && <SecuritySection workspace={workspace} />}
             </div>
 
             {onboardingData && (
@@ -155,14 +172,16 @@ function OtherInfoSection({ onboardingData, loading, onOpenPopup }: { onboarding
 
     return (
         <div className="max-w-3xl space-y-6">
-            <div className="bg-white rounded-2xl border border-[#EEEEEE] p-8 shadow-sm">
-                <div className="flex items-start gap-6">
-                    <div className="p-4 bg-[#43B97B]/10 rounded-2xl">
-                        <SparklesIcon className="size-8 text-[#43B97B]" />
+            <Card
+                className="hover:border-[#43B97B] transition-colors shadow-sm hover:shadow-md group flex flex-col"
+            >
+                <CardHeader className="space-y-0 flex flex-row items-center gap-4 py-4">
+                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-12 w-12 flex items-center justify-center shrink-0">
+                        <SparklesIcon className="h-6 w-6 text-[#43B97B] group-hover:text-[#43B97B] transition-colors" />
                     </div>
-                    <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-2xl font-bold text-[#333333]">Deep Profile Your Company</h3>
+                    <div className="flex flex-col flex-1">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-xl text-[#4A4A4A]">Deep Profile Your Company</CardTitle>
                             {onboardingData && (
                                 <div className="flex flex-col items-end">
                                     <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Confidence Score</span>
@@ -178,37 +197,44 @@ function OtherInfoSection({ onboardingData, loading, onOpenPopup }: { onboarding
                                 </div>
                             )}
                         </div>
-                        <p className="text-gray-500 leading-relaxed mb-6">
-                            Completing these questions helps our AI understand your business on a deeper level,
-                            allowing it to craft much more effective outreach strategies and find higher quality leads.
-                        </p>
-                        <Button
-                            onClick={onOpenPopup}
-                            className="bg-[#43B97B] hover:bg-[#3aa86d] text-white px-8 rounded-xl h-11 transition-all font-bold shadow-lg shadow-[#43B97B]/10 flex items-center gap-2"
-                        >
-                            <SparklesIcon className="size-4" />
-                            {onboardingData?.triggerMoment ? 'Edit Deep Profile' : 'Complete Deep Profile'}
-                        </Button>
                     </div>
-                </div>
+                </CardHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10 border-t border-gray-50 pt-10">
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">💡</div>
-                        <div>
-                            <p className="text-xs font-bold text-[#333333]">Better Strategies</p>
-                            <p className="text-[10px] text-gray-400">AI learns your unique worldview</p>
+                <CardContent className="flex-grow pt-0 pb-6">
+                    <div className="h-px w-full bg-gray-100 mb-6" />
+                    <CardDescription className="text-base text-gray-600 mb-6">
+                        Completing these questions helps our AI understand your business on a deeper level,
+                        allowing it to craft much more effective outreach strategies and find higher quality leads.
+                    </CardDescription>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-50/80 transition-colors">
+                            <div className="size-10 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">💡</div>
+                            <div>
+                                <p className="text-xs font-bold text-[#333333]">Better Strategies</p>
+                                <p className="text-[10px] text-gray-400">AI learns your unique worldview</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-50/80 transition-colors">
+                            <div className="size-10 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">🎯</div>
+                            <div>
+                                <p className="text-xs font-bold text-[#333333]">Sharper Lead Discovery</p>
+                                <p className="text-[10px] text-gray-400">Based on real customer evidence</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm text-lg">🎯</div>
-                        <div>
-                            <p className="text-xs font-bold text-[#333333]">Sharper Lead Discovery</p>
-                            <p className="text-[10px] text-gray-400">Based on real customer evidence</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                </CardContent>
+
+                <CardFooter className="pt-0 pb-6">
+                    <Button
+                        onClick={onOpenPopup}
+                        className="w-full bg-[#43B97B] hover:bg-[#3aa86d] text-white rounded-lg h-10 font-bold shadow-sm flex items-center justify-center gap-2"
+                    >
+                        <SparklesIcon className="size-4" />
+                        {onboardingData?.triggerMoment ? 'Edit Deep Profile' : 'Complete Deep Profile'}
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
     )
 }
@@ -481,7 +507,108 @@ function IntelligenceSection({ onboardingData, loading }: { onboardingData: Onbo
     )
 }
 
-function SecuritySection() {
+function SecuritySection({ workspace }: { workspace: Workspace }) {
+    const router = useRouter()
+    const supabase = createClient()
+
+    // Password Change State
+    const [isEditingPassword, setIsEditingPassword] = useState(false)
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+
+    // Delete Workspace State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [deleteLoading, setDeleteLoading] = useState(false)
+
+    // Session Info State
+    const [sessionInfo, setSessionInfo] = useState<{
+        browser: string
+        os: string
+        lastActive: string
+    } | null>(null)
+
+    useEffect(() => {
+        const getSessionInfo = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+                // Parse user agent for display
+                const ua = navigator.userAgent
+                let browser = "Unknown Browser"
+                if (ua.includes("Chrome")) browser = "Chrome"
+                else if (ua.includes("Safari")) browser = "Safari"
+                else if (ua.includes("Firefox")) browser = "Firefox"
+                else if (ua.includes("Edge")) browser = "Edge"
+
+                let os = "Unknown OS"
+                if (ua.includes("Mac")) os = "Mac OS"
+                else if (ua.includes("Windows")) os = "Windows"
+                else if (ua.includes("Linux")) os = "Linux"
+                else if (ua.includes("iOS")) os = "iOS"
+                else if (ua.includes("Android")) os = "Android"
+
+                setSessionInfo({
+                    browser: `${browser} on ${os}`,
+                    os,
+                    lastActive: "Current session"
+                })
+            }
+        }
+        getSessionInfo()
+    }, [])
+
+    const handlePasswordChange = async () => {
+        if (!newPassword || !confirmPassword) {
+            toast.error("Please fill in all fields")
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error("Passwords do not match")
+            return
+        }
+        if (newPassword.length < 6) {
+            toast.error("Password must be at least 6 characters")
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword })
+            if (error) throw error
+
+            toast.success("Password updated successfully")
+            setIsEditingPassword(false)
+            setNewPassword('')
+            setConfirmPassword('')
+        } catch (error: any) {
+            console.error(error)
+            toast.error(error.message || "Failed to update password")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDeleteWorkspace = async () => {
+        setDeleteLoading(true)
+        try {
+            // Clear local storage associated with this workspace
+            localStorage.removeItem(`onboarding_data_${workspace.id}`)
+            localStorage.removeItem(`onboarding_step_${workspace.id}`)
+            localStorage.removeItem(`onboarding_completed_${workspace.id}`)
+            localStorage.removeItem(`onboarding_testmode_${workspace.id}`)
+
+            await deleteWorkspace(workspace.id)
+            toast.success("Workspace deleted")
+            router.push('/workspaces')
+        } catch (error) {
+            console.error("Failed to delete workspace:", error)
+            toast.error("Failed to delete workspace")
+        } finally {
+            setDeleteLoading(false)
+            setShowDeleteConfirm(false)
+        }
+    }
+
     return (
         <div className="max-w-5xl space-y-12">
             {/* Header Section */}
@@ -493,40 +620,82 @@ function SecuritySection() {
             {/* Main Security Options */}
             <div className="border-t border-gray-100">
                 {/* Password Row */}
-                <div className="flex items-center justify-between py-8 border-b border-gray-100">
-                    <div className="space-y-1 max-w-sm">
-                        <h4 className="font-bold text-[#333333]">Password</h4>
-                        <p className="text-sm text-gray-500">Set a password to protect your account.</p>
+                <div className="py-8 border-b border-gray-100">
+                    <div className="flex items-start justify-between">
+                        <div className="space-y-1 max-w-sm">
+                            <h4 className="font-bold text-[#333333]">Password</h4>
+                            <p className="text-sm text-gray-500">Set a password to protect your account.</p>
+                        </div>
+                        <div className="flex items-center gap-8">
+                            {!isEditingPassword && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-lg tracking-widest text-[#333333] font-medium">••••••••••••••••</span>
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-[#43B97B] bg-green-50 px-2 py-0.5 rounded-full">
+                                        <CheckCircleSolid className="size-3" />
+                                        Very secure
+                                    </div>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setIsEditingPassword(!isEditingPassword)}
+                                className="px-5 py-1.5 border border-[#EEEEEE] rounded-lg text-sm font-bold text-[#333333] hover:bg-gray-50 transition-colors"
+                            >
+                                {isEditingPassword ? 'Cancel' : 'Edit'}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8">
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg tracking-widest text-[#333333] font-medium">••••••••••••••••</span>
-                            <div className="flex items-center gap-1 text-[11px] font-bold text-[#43B97B] bg-green-50 px-2 py-0.5 rounded-full">
-                                <CheckCircleSolid className="size-3" />
-                                Very secure
+
+                    {isEditingPassword && (
+                        <div className="mt-6 max-w-md ml-auto bg-gray-50 p-6 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-2">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#43B97B]/20 focus:border-[#43B97B] text-sm"
+                                        placeholder="Enter new password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#43B97B]/20 focus:border-[#43B97B] text-sm"
+                                        placeholder="Confirm new password"
+                                    />
+                                </div>
+                                <div className="flex justify-end pt-2">
+                                    <Button
+                                        onClick={handlePasswordChange}
+                                        disabled={isLoading}
+                                        className="bg-[#43B97B] hover:bg-[#3aa86d] text-white"
+                                    >
+                                        {isLoading ? 'Updating...' : 'Update Password'}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                        <button className="px-5 py-1.5 border border-[#EEEEEE] rounded-lg text-sm font-bold text-[#333333] hover:bg-gray-50 transition-colors">
-                            Edit
-                        </button>
-                    </div>
+                    )}
                 </div>
 
-                {/* 2FA Row */}
+                {/* Delete Workspace Row */}
+
+                {/* Delete Workspace Row */}
                 <div className="flex items-center justify-between py-8 border-b border-gray-100">
                     <div className="space-y-1 max-w-sm">
-                        <h4 className="font-bold text-[#333333]">Two-step verification</h4>
-                        <p className="text-sm text-gray-500">We recommend requiring a verification code in addition to your password.</p>
+                        <h4 className="font-bold text-[#333333]">Delete Workspace</h4>
+                        <p className="text-sm text-gray-500">Permanently delete this workspace and all associated data.</p>
                     </div>
-                    <div className="flex items-center gap-8">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-6 bg-[#43B97B] rounded-full relative cursor-pointer">
-                                <div className="absolute right-1 top-1 size-4 bg-white rounded-full shadow-sm" />
-                            </div>
-                            <span className="text-sm font-bold text-[#333333]">Two-step verification</span>
-                        </div>
-                        <button className="px-5 py-1.5 border border-[#EEEEEE] rounded-lg text-sm font-bold text-[#333333] hover:bg-gray-50 transition-colors">
-                            Edit
+                    <div>
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="px-5 py-1.5 border border-red-100 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"
+                        >
+                            Delete Workspace
                         </button>
                     </div>
                 </div>
@@ -536,51 +705,57 @@ function SecuritySection() {
             <div className="space-y-6 pt-4">
                 <div>
                     <h3 className="text-lg font-bold text-[#333333]">Browsers and devices</h3>
-                    <p className="text-sm text-gray-500 mt-1">These browsers and devices are currently signed in to your account. Remove any unauthorized devices.</p>
+                    <p className="text-sm text-gray-500 mt-1">These browsers and devices are currently signed in to your account.</p>
                 </div>
 
                 <div className="space-y-1">
-                    {[
-                        {
-                            name: 'Safari on Mac OS X',
-                            location: 'Ninh Binh, Vietnam',
-                            status: 'Current session',
-                            icon: '🌐'
-                        },
-                        {
-                            name: "Kari's MacBook Pro",
-                            location: 'Ninh Binh, Vietnam',
-                            status: '1 month ago',
-                            icon: '💻'
-                        }
-                    ].map((device, i) => (
-                        <div key={i} className="flex items-center justify-between py-5 border-b border-gray-50 group px-2 hover:bg-gray-50/50 rounded-xl transition-colors">
+                    {sessionInfo ? (
+                        <div className="flex items-center justify-between py-5 border-b border-gray-50 group px-2 hover:bg-gray-50/50 rounded-xl transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="size-10 bg-white border border-[#EEEEEE] rounded-xl flex items-center justify-center text-xl shadow-sm">
-                                    {device.icon}
+                                    🌐
                                 </div>
-                                <h4 className="font-bold text-[#333333]">{device.name}</h4>
+                                <h4 className="font-bold text-[#333333]">{sessionInfo.browser}</h4>
                             </div>
 
                             <div className="flex items-center gap-12 text-sm">
                                 <div className="flex items-center gap-2 text-gray-500">
-                                    <div className="size-4 bg-red-600 rounded-full flex items-center justify-center text-[8px] text-white font-bold">★</div>
-                                    {device.location}
+                                    <div className="size-4 bg-[#43B97B] rounded-full flex items-center justify-center text-[8px] text-white font-bold">✓</div>
+                                    Current Device
                                 </div>
-                                <span className={cn(
-                                    "font-medium",
-                                    device.status === 'Current session' ? "text-gray-400" : "text-gray-400"
-                                )}>
-                                    {device.status}
+                                <span className="font-medium text-[#43B97B]">
+                                    {sessionInfo.lastActive}
                                 </span>
-                                <button className="p-2 text-gray-300 hover:text-red-500 transition-colors">
-                                    <ArrowLeftStartOnRectangleIcon className="size-4 rotate-180" />
-                                </button>
                             </div>
                         </div>
-                    ))}
+                    ) : (
+                        <div className="py-4 text-center text-gray-400 text-sm">Loading session info...</div>
+                    )}
                 </div>
             </div>
+            <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                            <ExclamationTriangleIcon className="h-5 w-5" />
+                            Delete Workspace
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this workspace? This action cannot be undone and all data associated with it will be permanently lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteWorkspace}
+                            disabled={deleteLoading}
+                            className="bg-red-600 hover:bg-red-700 border-none ring-0 focus:ring-0 shadow-none outline-none"
+                        >
+                            {deleteLoading ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
