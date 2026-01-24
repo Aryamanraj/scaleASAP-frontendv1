@@ -80,6 +80,7 @@ export type OnboardingData = {
     beforeState: string;
     afterState: string;
     price: string;
+    pricingPage: string;
     salesCycle: string;
     decisionProcess: string;
     decisionProcessOther?: string;
@@ -210,6 +211,7 @@ export const INITIAL_DATA: OnboardingData = {
     beforeState: "",
     afterState: "",
     price: "",
+    pricingPage: "",
     salesCycle: "",
     decisionProcess: "",
     coreOffer: "",

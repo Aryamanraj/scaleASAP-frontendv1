@@ -70,10 +70,12 @@ export async function scrapeWebsite(url: string) {
         const youtube = extractLink(['youtube.com/', 'youtu.be/']);
         const telegram = extractLink(['t.me/']);
         const slack = extractLink(['slack.com/']);
+        const pricing = extractLink(['pricing', 'plans', 'buy', 'subscription']);
 
         // AI Cleaning with fallback
         let cleanContent = rawText;
         let companyDescription = "";
+        let pricingInfo = "";
 
         try {
             const { content, provider } = await chatCompletion({
@@ -85,11 +87,13 @@ export async function scrapeWebsite(url: string) {
                         content: `You are a professional business analyst. Your goal is to analyze scraped website text and:
 1. Generate a "companyDescription": A precise, factual 1-sentence description of what the company actually DOES (e.g., "A logistics platform specializing in supply chain automation and carbon-neutral freight management"). Avoid marketing fluff like "It all starts here" or "The future of...".
 2. Provide "cleanContent": A structured markdown of their core offerings, UVPs, and ICP indicators.
+3. Provide "pricingPage": If you can identify a URL to a dedicated pricing/plans page, extract it. If the pricing information (e.g., plans, tiers, or "Starting at $X") is prominently displayed on the current page itself, return "current_page". If neither, return an empty string.
 
 Return your response in this EXACT JSON format:
 {
   "companyDescription": "...",
-  "cleanContent": "..."
+  "cleanContent": "...",
+  "pricingPage": "..."
 }`
                     },
                     { role: "user", content: `Raw Scraped Text:\n${rawText.substring(0, 10000)}` }
@@ -102,6 +106,7 @@ Return your response in this EXACT JSON format:
                 const parsed = JSON.parse(content || "{}");
                 companyDescription = parsed.companyDescription || "";
                 cleanContent = parsed.cleanContent || rawText;
+                pricingInfo = parsed.pricingPage || "";
             } catch (pErr) {
                 console.warn("Failed to parse AI JSON response, using raw text", pErr);
                 cleanContent = content || rawText;
@@ -118,6 +123,7 @@ Return your response in this EXACT JSON format:
             favicon: faviconUrl,
             content: cleanContent,
             companyDescription: companyDescription,
+            pricingPage: pricingInfo === "current_page" ? targetUrl : (pricingInfo || pricing),
             socials: {
                 linkedin,
                 twitter,

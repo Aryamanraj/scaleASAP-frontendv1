@@ -153,6 +153,18 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                     <h3 className="text-lg font-medium text-[#4A4A4A]">Service Economics</h3>
 
                     <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">Pricing Page URL (Optional):</Label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-3 pointer-events-none text-gray-500 text-sm font-medium">https://</div>
+                                <Input
+                                    placeholder="yourwebsite.com/pricing"
+                                    value={data.pricingPage?.replace('https://', '')}
+                                    onChange={(e) => updateData({ pricingPage: `https://${e.target.value}` })}
+                                    className="h-10 pl-14"
+                                />
+                            </div>
+                        </div>
                         {/* Pricing Model - Vertical */}
                         <div className="space-y-3">
                             <Label className="text-sm font-medium">Pricing model:</Label>
@@ -387,6 +399,20 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
             {/* The Economics */}
             <div className="space-y-8 pb-8 border-b border-gray-100">
                 <h3 className="text-lg font-medium text-[#4A4A4A]">The Economics</h3>
+
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Pricing Page URL (Optional):</Label>
+                    <div className="relative flex items-center">
+                        <div className="absolute left-3 pointer-events-none text-gray-500 text-sm font-medium">https://</div>
+                        <Input
+                            placeholder="yourwebsite.com/pricing"
+                            value={data.pricingPage?.replace('https://', '')}
+                            onChange={(e) => updateData({ pricingPage: `https://${e.target.value}` })}
+                            className="h-10 pl-14"
+                        />
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">We use this to analyze your business model and monetization strategy.</p>
+                </div>
 
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

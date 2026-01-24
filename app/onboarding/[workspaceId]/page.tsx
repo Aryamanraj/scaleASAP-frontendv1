@@ -220,7 +220,16 @@ export default function OnboardingPage() {
             setTestMode={setTestMode}
             isScraping={isScraping}
         >
-            {currentStep.id === 'company-basics' && <CompanyBasics data={data} updateData={updateData} isScraping={isScraping} setIsScraping={setIsScraping} setFaviconUrl={setFaviconUrl} />}
+            {currentStep.id === 'company-basics' && (
+                <CompanyBasics
+                    data={data}
+                    updateData={updateData}
+                    isScraping={isScraping}
+                    setIsScraping={setIsScraping}
+                    setFaviconUrl={setFaviconUrl}
+                    isWebsiteLocked={completedSteps.includes('company-basics')}
+                />
+            )}
             {currentStep.id === 'offer-strategy' && <ProductStrategy data={data} updateData={updateData} />}
             {currentStep.id === 'voice-dna' && <VoiceDNA data={data} updateData={updateData} />}
             {currentStep.id === 'goal' && <Goal data={data} updateData={updateData} />}

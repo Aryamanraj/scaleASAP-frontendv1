@@ -8,6 +8,7 @@ import { OnboardingData } from "@/lib/onboarding-data"
 import { GlobeAltIcon, BuildingOfficeIcon, WindowIcon, ArrowPathIcon, SparklesIcon } from "@heroicons/react/24/outline"
 import { SocialIcon } from "../SocialIcon"
 import { scrapeWebsite } from "@/app/actions/scrape"
+import { cn } from "@/lib/utils"
 
 interface CompanyBasicsProps {
     data: OnboardingData
@@ -15,9 +16,10 @@ interface CompanyBasicsProps {
     isScraping?: boolean
     setIsScraping?: (value: boolean) => void
     setFaviconUrl?: (url: string | undefined) => void
+    isWebsiteLocked?: boolean
 }
 
-export function CompanyBasics({ data, updateData, isScraping = false, setIsScraping, setFaviconUrl }: CompanyBasicsProps) {
+export function CompanyBasics({ data, updateData, isScraping = false, setIsScraping, setFaviconUrl, isWebsiteLocked = false }: CompanyBasicsProps) {
     const [scrapingStatus, setScrapingStatus] = useState<string>("")
     const lastScrapedUrl = useRef<string>("")
 
@@ -40,7 +42,8 @@ export function CompanyBasics({ data, updateData, isScraping = false, setIsScrap
             privacyUrl: "",
             companyDescription: "",
             favicon_url: "",
-            website_scrape: ""
+            website_scrape: "",
+            pricingPage: ""
         });
 
         setIsScraping?.(true);
@@ -68,7 +71,8 @@ export function CompanyBasics({ data, updateData, isScraping = false, setIsScrap
                     telegram: parsed.socials?.telegram || "",
                     slack: parsed.socials?.slack || "",
                     termsUrl: parsed.policies?.terms || "",
-                    privacyUrl: parsed.policies?.privacy || ""
+                    privacyUrl: parsed.policies?.privacy || "",
+                    pricingPage: parsed.pricingPage || ""
                 });
 
                 setScrapingStatus("Generating AI summary...");
@@ -174,9 +178,19 @@ export function CompanyBasics({ data, updateData, isScraping = false, setIsScrap
                                 value={data.website.replace('https://', '')}
                                 onChange={(e) => updateData({ website: `https://${e.target.value}` })}
                                 onBlur={handleWebsiteBlur}
-                                className="pl-[6.5rem]"
+                                disabled={isWebsiteLocked}
+                                className={cn(
+                                    "pl-[6.5rem] h-11",
+                                    isWebsiteLocked && "bg-gray-50 text-gray-400 cursor-not-allowed border-dashed focus-visible:ring-0"
+                                )}
                             />
                         </div>
+                        {isWebsiteLocked && (
+                            <p className="text-[10px] font-medium text-gray-400 flex items-center gap-1.5 mt-2 ml-1">
+                                <span className="p-0.5 rounded-full bg-gray-100 italic">Locked</span>
+                                Workspace website cannot be changed once confirmed.
+                            </p>
+                        )}
 
                         {/* Scraping Status Banner */}
                         {isScraping && scrapingStatus && (

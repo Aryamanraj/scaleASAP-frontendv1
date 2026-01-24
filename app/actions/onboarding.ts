@@ -125,10 +125,12 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
             markdown += `### Core Offer\n${data.coreOffer || "Not specified"}\n\n`
             markdown += `- **Pricing Model:** ${data.pricingModel || "N/A"}\n`
             markdown += `- **Pricing Details:** ${data.pricingDetails || "N/A"}\n`
+            markdown += `- **Pricing Page:** ${data.pricingPage || "Not specified"}\n`
             markdown += `- **Time to Results:** ${data.timeToResults || "N/A"}\n\n`
         } else {
             markdown += `### Pitch\n${data.oneSentencePitch || "Not specified"}\n\n`
             markdown += `- **Price:** ${data.price || "Not specified"}\n`
+            markdown += `- **Pricing Page:** ${data.pricingPage || "Not specified"}\n`
             markdown += `- **Sales Cycle:** ${data.salesCycle || "Not specified"} days\n\n`
         }
 
