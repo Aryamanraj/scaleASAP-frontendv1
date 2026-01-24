@@ -19,6 +19,7 @@ import { getCampaigns, Campaign, createCampaign } from '@/app/actions/campaigns'
 import { CampaignsList } from '@/components/dashboard/CampaignsList'
 import { CampaignDetailCurtain } from '@/components/dashboard/CampaignDetailCurtain'
 import { Lead } from '@/app/actions/leads'
+import { Button } from '@/components/ui/button'
 
 export default function DashboardPage() {
     const params = useParams()
@@ -31,7 +32,6 @@ export default function DashboardPage() {
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [showDiscoveryChat, setShowDiscoveryChat] = useState(false)
-    const [showFollowUpDiscovery, setShowFollowUpDiscovery] = useState(false)
     const [experiments, setExperiments] = useState<Experiment[]>([])
     const [hasJustCreatedExperiments, setHasJustCreatedExperiments] = useState(false)
     const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         setExperiments(exps)
         // Switch to experiments tab to show the list
         handleTabChange('experiments')
-        setShowFollowUpDiscovery(false)
+        setShowDiscoveryChat(false)
 
         // Trigger feedback popup after a short delay so user can see the experiments
         if (exps.length >= 5) {
@@ -148,10 +148,7 @@ export default function DashboardPage() {
             <div className="w-2 shrink-0" />
 
             <main className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#EEEEEE] shadow-sm relative">
-                <div className={cn(
-                    "max-w-7xl mx-auto h-full",
-                    showDiscoveryChat ? "p-0" : "p-8"
-                )}>
+                <div className="max-w-7xl mx-auto h-full p-8">
                     {currentTab === 'overview' && (
                         <Overview
                             isEmpty={experiments.length === 0}
@@ -164,36 +161,41 @@ export default function DashboardPage() {
                         />
                     )}
                     {currentTab === 'experiments' && (
-                        showFollowUpDiscovery ? (
-                            <DiscoveryChat
-                                workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
-                                onExperimentsCreated={handleExperimentsCreated}
-                                isFollowUp={true}
-                                previousExperiments={experiments}
-                                onBack={() => setShowFollowUpDiscovery(false)}
-                            />
-                        ) : experiments.length > 0 ? (
+                        experiments.length > 0 ? (
                             <ExperimentsList
                                 experiments={experiments}
-                                onNewExperiment={() => setShowFollowUpDiscovery(true)}
-                                onExperimentSelect={setSelectedExperiment}
+                                onNewExperiment={() => {
+                                    setShowDiscoveryChat(true)
+                                    setSelectedExperiment(null)
+                                    setSelectedCampaign(null)
+                                }}
+                                onExperimentSelect={(exp) => {
+                                    setSelectedExperiment(exp)
+                                    setShowDiscoveryChat(false)
+                                    setSelectedCampaign(null)
+                                }}
                                 selectedId={selectedExperiment?.id}
                                 hasOngoingChat={hasChatHistory}
-                            />
-                        ) : hasChatHistory ? (
-                            <DiscoveryChat
-                                workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
-                                onExperimentsCreated={handleExperimentsCreated}
-                                initialChatHistory={workspace.discovery_chat_history}
+                                isDiscoveryOpen={showDiscoveryChat}
                             />
                         ) : (
-                            <DiscoveryChat
-                                workspaceId={workspaceId}
-                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
-                                onExperimentsCreated={handleExperimentsCreated}
-                            />
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+                                <div className="size-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <span className="text-2xl">🧪</span>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-[#333333]">Ready to Scale?</h2>
+                                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                                        Start a discovery chat to generate AI-powered outreach experiments.
+                                    </p>
+                                    <Button
+                                        onClick={() => setShowDiscoveryChat(true)}
+                                        className="bg-[#43B97B] hover:bg-[#3CA66F] text-white"
+                                    >
+                                        Start Discovery
+                                    </Button>
+                                </div>
+                            </div>
                         )
                     )}
                     {currentTab === 'campaigns' && (
@@ -201,11 +203,19 @@ export default function DashboardPage() {
                             <CampaignsList
                                 campaigns={campaigns}
                                 experiments={experiments}
-                                onCampaignSelect={(c) => {
+                                onCampaignSelect={(c: Campaign) => {
                                     setSelectedCampaign(c)
                                     setSelectedExperiment(null)
+                                    setShowDiscoveryChat(false)
                                 }}
                                 selectedId={selectedCampaign?.id}
+                                onNewCampaign={() => {
+                                    setShowDiscoveryChat(true)
+                                    setSelectedCampaign(null)
+                                    setSelectedExperiment(null)
+                                }}
+                                hasOngoingChat={hasChatHistory}
+                                isDiscoveryOpen={showDiscoveryChat}
                             />
                         </div>
                     )}
@@ -229,23 +239,44 @@ export default function DashboardPage() {
                 </div>
             </main>
 
-            {(selectedExperiment || selectedCampaign) && (
-                <div className="flex shrink-0 ml-2 animate-in slide-in-from-right-4 duration-500">
-                    <ExperimentDetailCurtain
-                        experiment={selectedExperiment}
-                        isOpen={!!selectedExperiment}
-                        onClose={() => setSelectedExperiment(null)}
-                        onCreateCampaign={handleCreateCampaign}
-                    />
-
-                    <CampaignDetailCurtain
-                        campaign={selectedCampaign}
-                        experiment={experiments.find(e => e.id === selectedCampaign?.experiment_id) || null}
-                        isOpen={!!selectedCampaign}
-                        onClose={() => setSelectedCampaign(null)}
+            {/* Curtains Container - Unified sliding orchestration */}
+            <div className={cn(
+                "flex shrink-0 transition-all duration-500 ease-in-out overflow-hidden h-full",
+                ((showDiscoveryChat || !!selectedExperiment) && currentTab === 'experiments') || ((showDiscoveryChat || !!selectedCampaign) && currentTab === 'campaigns')
+                    ? "ml-2"
+                    : "ml-0"
+            )}>
+                {/* Discovery Curtain */}
+                <div className={cn(
+                    "bg-white rounded-2xl border border-[#EEEEEE] shadow-sm transition-all duration-500 ease-in-out flex flex-col overflow-hidden h-full",
+                    (showDiscoveryChat && (currentTab === 'experiments' || currentTab === 'campaigns')) ? "w-[480px] opacity-100" : "w-0 opacity-0 border-none pointer-events-none"
+                )}>
+                    <DiscoveryChat
+                        key={experiments.length > 0 ? 'followup' : 'initial'}
+                        workspaceId={workspaceId}
+                        userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
+                        onExperimentsCreated={handleExperimentsCreated}
+                        isFollowUp={experiments.length > 0}
+                        previousExperiments={experiments}
+                        onBack={() => setShowDiscoveryChat(false)}
+                        initialChatHistory={experiments.length > 0 ? undefined : workspace.discovery_chat_history}
                     />
                 </div>
-            )}
+
+                <ExperimentDetailCurtain
+                    experiment={selectedExperiment}
+                    isOpen={!!selectedExperiment && currentTab === 'experiments'}
+                    onClose={() => setSelectedExperiment(null)}
+                    onCreateCampaign={handleCreateCampaign}
+                />
+
+                <CampaignDetailCurtain
+                    campaign={selectedCampaign}
+                    experiment={experiments.find(e => e.id === selectedCampaign?.experiment_id) || null}
+                    isOpen={!!selectedCampaign && currentTab === 'campaigns'}
+                    onClose={() => setSelectedCampaign(null)}
+                />
+            </div>
 
             {showFeedback && (
                 <FeedbackPopup

@@ -85,6 +85,7 @@ export type OnboardingData = {
     decisionProcessOther?: string;
 
     // Services Specific
+    serviceType?: string;
     coreOffer?: string;
     deliveryProcess?: { step1: string; step2: string; step3: string };
     deliverables?: string[];
@@ -123,6 +124,8 @@ export type OnboardingData = {
     onboardingGoal: 'discover' | 'refine' | '';
     targetICP: string;
     icpConfidence: number;
+    icpConfidenceReason?: string; // This was missing in the original provided file but likely implicitly updated if added to params elsewhere? Or I should just stick to pure addition.
+    // I will stick to pure addition of serviceType
 
     // Post-Onboarding Sections (Other Information)
     // Founding Story

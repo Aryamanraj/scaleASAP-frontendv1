@@ -16,28 +16,28 @@ export interface ICP {
     pain: string
     trigger: string
     wiza_filters: {
-        job_title?: Array<{v: string, s?: string}>
+        job_title?: Array<{ v: string, s?: string }>
         job_title_level?: string[]
         job_role?: string[]
         job_sub_role?: string[]
-        location?: {v: string, b?: string, s?: string}
+        location?: { v: string, b?: string, s?: string }
         skill?: string[]
         school?: string[]
         major?: string[]
-        company_industry?: Array<{v: string, s?: string}>
+        company_industry?: Array<{ v: string, s?: string }>
         company_size?: string[]
         company_annual_growth?: string
         department_size?: string[]
         revenue?: string[]
-        funding_date?: {t: string, v: string}
+        funding_date?: { t: string, v: string }
         last_funding_min?: string
         last_funding_max?: string
         funding_min?: string
         funding_max?: string
-        funding_stage?: {t: string, v: string[]}
-        funding_type?: {t: string, v: string[]}
+        funding_stage?: { t: string, v: string[] }
+        funding_type?: { t: string, v: string[] }
         company_type?: string[]
-        company_summary?: Array<{v: string, s?: string}>
+        company_summary?: Array<{ v: string, s?: string }>
         year_founded_start?: string
         year_founded_end?: string
     }

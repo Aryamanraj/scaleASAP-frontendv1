@@ -13,7 +13,7 @@ interface SidebarStepperProps {
     steps: OnboardingStep[]
 }
 
-export function SidebarStepper({ currentStepId, completedSteps, onStepClick, steps }: SidebarStepperProps) {
+export function SidebarStepper({ currentStepId, completedSteps, onStepClick, steps, companyType }: SidebarStepperProps) {
     return (
         <div className="w-full max-w-xs py-4 hidden lg:block">
             <div className="relative flex flex-col gap-0">
@@ -24,7 +24,11 @@ export function SidebarStepper({ currentStepId, completedSteps, onStepClick, ste
 
                     const canNavigateTo = completedSteps.includes(step.id) || isCompleted || index === steps.findIndex((s: OnboardingStep) => s.id === currentStepId)
 
-                    const title = step.title;
+                    let title = step.title;
+                    if (step.id === 'offer-strategy') {
+                        if (companyType === 'software') title = "About Your Product";
+                        else if (companyType === 'services') title = "About Your Offer";
+                    }
 
                     return (
                         <div

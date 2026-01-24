@@ -13,6 +13,7 @@ interface ExperimentsListProps {
     onExperimentSelect?: (experiment: Experiment) => void
     selectedId?: string
     hasOngoingChat?: boolean
+    isDiscoveryOpen?: boolean
 }
 
 export function ExperimentsList({
@@ -20,7 +21,8 @@ export function ExperimentsList({
     onNewExperiment,
     onExperimentSelect,
     selectedId,
-    hasOngoingChat = false
+    hasOngoingChat = false,
+    isDiscoveryOpen = false
 }: ExperimentsListProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -89,13 +91,15 @@ export function ExperimentsList({
                     <h1 className="text-2xl font-bold text-[#333333]">Experiments</h1>
                     <p className="text-sm text-gray-500 mt-1">Showing {experiments.length} of {experiments.length} experiments</p>
                 </div>
-                <Button
-                    onClick={onNewExperiment}
-                    variant="outline"
-                    className="bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
-                >
-                    {hasOngoingChat ? 'Continue Discovery' : '+ New Experiment'}
-                </Button>
+                {!isDiscoveryOpen && (
+                    <Button
+                        onClick={onNewExperiment}
+                        variant="outline"
+                        className="bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
+                    >
+                        {hasOngoingChat ? 'Continue Discovery' : '+ New Experiment'}
+                    </Button>
+                )}
             </div>
 
             {/* Summary Stats */}

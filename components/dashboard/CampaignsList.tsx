@@ -14,14 +14,27 @@ import {
 } from '@heroicons/react/24/outline'
 import { Badge } from '@/components/ui/badge'
 
+import { Button } from '@/components/ui/button'
+
 interface CampaignsListProps {
     campaigns: Campaign[]
     experiments: Experiment[]
     onCampaignSelect: (campaign: Campaign) => void
     selectedId?: string
+    onNewCampaign?: () => void
+    hasOngoingChat?: boolean
+    isDiscoveryOpen?: boolean
 }
 
-export function CampaignsList({ campaigns, experiments, onCampaignSelect, selectedId }: CampaignsListProps) {
+export function CampaignsList({
+    campaigns,
+    experiments,
+    onCampaignSelect,
+    selectedId,
+    onNewCampaign,
+    hasOngoingChat = false,
+    isDiscoveryOpen = false
+}: CampaignsListProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active': return 'bg-[#43B97B]/10 text-[#43B97B] border-[#43B97B]/20'
@@ -46,6 +59,12 @@ export function CampaignsList({ campaigns, experiments, onCampaignSelect, select
                     <p className="text-sm text-gray-500 max-w-sm">
                         Create a campaign from the Experiments tab to start finding and reaching out to leads.
                     </p>
+                    <Button
+                        variant="outline"
+                        className="mt-4 bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
+                    >
+                        New Campaign
+                    </Button>
                 </div>
             </div>
         )
@@ -59,6 +78,14 @@ export function CampaignsList({ campaigns, experiments, onCampaignSelect, select
                     <h1 className="text-2xl font-bold text-[#333333]">Campaigns</h1>
                     <p className="text-sm text-gray-500 mt-1">Showing {campaigns.length} total campaigns</p>
                 </div>
+                {!isDiscoveryOpen && (
+                    <Button
+                        variant="outline"
+                        className="bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
+                    >
+                        New Campaign
+                    </Button>
+                )}
             </div>
 
             {/* Summary Stats */}

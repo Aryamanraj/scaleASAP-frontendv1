@@ -7,6 +7,7 @@ import { StepContent } from "../StepContent"
 import { OnboardingData } from "@/lib/onboarding-data"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ProductStrategyProps {
     data: OnboardingData
@@ -37,16 +38,40 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
     if (isServices) {
         return (
             <StepContent
-                title="Offer Strategy"
+                title="About Your Offer"
                 description="Define what you deliver and how you deliver it."
             >
+                {/* Service Type Selection */}
+                <div className="space-y-2 pb-6 border-b border-gray-100">
+                    <Label className="text-base text-[#4A4A4A] font-medium">What kind of service do you provide?</Label>
+                    <Select value={data.serviceType} onValueChange={(val) => updateData({ serviceType: val })}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="agencymarketing">Marketing Agency (SEO/PPC/Social)</SelectItem>
+                            <SelectItem value="agencydev">Development Agency</SelectItem>
+                            <SelectItem value="agencydesign">Design / Creative Agency</SelectItem>
+                            <SelectItem value="consulting_strategy">Strategy Consulting</SelectItem>
+                            <SelectItem value="consulting_ops">Operations Consulting</SelectItem>
+                            <SelectItem value="consulting_gtm">GTM / Sales Consulting</SelectItem>
+                            <SelectItem value="recruiting">Recruiting / Staffing</SelectItem>
+                            <SelectItem value="legal">Legal Services</SelectItem>
+                            <SelectItem value="financial">Financial / Accounting Services</SelectItem>
+                            <SelectItem value="coaching">Business Coaching</SelectItem>
+                            <SelectItem value="managed_services">Managed IT Services (MSP)</SelectItem>
+                            <SelectItem value="other">Other Professional Services</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 {/* What You Actually Do */}
-                <div className="space-y-8 border-b border-gray-100 pb-8">
+                <div className="space-y-8 pb-8 border-b border-gray-100">
                     <h3 className="text-lg font-medium text-[#4A4A4A]">What You Actually Do</h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="coreOffer" className="text-base">Your Core Offer:</Label>
+                            <Label htmlFor="coreOffer" className="text-sm font-medium">Your Core Offer:</Label>
                             <p className="text-sm text-muted-foreground">In one sentence: What do you deliver and what outcome do you guarantee?</p>
                             <Textarea
                                 id="coreOffer"
@@ -56,27 +81,27 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                             />
                         </div>
 
-                        <div className="space-y-4 pt-2">
-                            <Label className="text-base text-[#4A4A4A]">The Delivery Process:</Label>
-                            <div className="grid gap-4">
-                                <div className="flex items-center gap-4">
-                                    <Label className="w-32 shrink-0 font-normal text-muted-foreground">Step 1 (Week 1):</Label>
+                        <div className="space-y-4">
+                            <Label className="text-base text-[#4A4A4A] font-medium">The Delivery Process:</Label>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-normal text-muted-foreground">Step 1 (Week 1):</Label>
                                     <Input
                                         placeholder="_____"
                                         value={data.deliveryProcess?.step1}
                                         onChange={(e) => updateDeliveryProcess('step1', e.target.value)}
                                     />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <Label className="w-32 shrink-0 font-normal text-muted-foreground">Step 2 (Week 2-3):</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-normal text-muted-foreground">Step 2 (Week 2-3):</Label>
                                     <Input
                                         placeholder="_____"
                                         value={data.deliveryProcess?.step2}
                                         onChange={(e) => updateDeliveryProcess('step2', e.target.value)}
                                     />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <Label className="w-32 shrink-0 font-normal text-muted-foreground">Step 3 (Week 4+):</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-normal text-muted-foreground">Step 3 (Week 4+):</Label>
                                     <Input
                                         placeholder="_____"
                                         value={data.deliveryProcess?.step3}
@@ -86,14 +111,15 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-4 pt-2">
-                            <Label className="text-base text-[#4A4A4A]">What They Get at the End:</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                            <Label className="text-base text-[#4A4A4A] font-medium">What They Get at the End:</Label>
+                            <div className="flex flex-col gap-3">
                                 {[
-                                    { id: 'files', label: 'Deliverable files (what: _____) field:deliverablesOther' },
+                                    { id: 'files', label: 'Deliverable files' },
                                     { id: 'system', label: 'Running system/process' },
                                     { id: 'dfy', label: 'Done-for-you ongoing' },
                                     { id: 'training', label: 'Training/handoff' },
+                                    { id: 'other', label: 'Other' },
                                 ].map((item) => (
                                     <div key={item.id} className="flex items-center space-x-2">
                                         <Checkbox
@@ -101,100 +127,39 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                             checked={data.deliverables?.includes(item.id)}
                                             onCheckedChange={() => toggleDeliverable(item.id)}
                                         />
-                                        <Label htmlFor={`del-${item.id}`} className="font-normal cursor-pointer">{item.label.split(' (')[0]}</Label>
+                                        <Label htmlFor={`del-${item.id}`} className="font-normal text-sm cursor-pointer">{item.label}</Label>
                                     </div>
                                 ))}
-                                <div className="flex items-center space-x-2">
-                                    <Label className="font-normal">Other:</Label>
-                                    <Input
-                                        className="h-8"
-                                        value={data.deliverablesOther || ''}
-                                        onChange={(e) => updateData({ deliverablesOther: e.target.value })}
-                                    />
-                                </div>
+
+                                {data.deliverables?.includes('other') && (
+                                    <div className="pt-1 pl-6">
+                                        <Input
+                                            className="h-9"
+                                            placeholder="Please specify other deliverables"
+                                            value={data.deliverablesOther || ''}
+                                            onChange={(e) => updateData({ deliverablesOther: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* The States */}
-                <div className="space-y-8 border-b border-gray-100 pb-8">
-                    <div className="grid grid-cols-1 gap-8">
-                        <div className="space-y-2">
-                            <Label htmlFor="beforeState" className="text-base text-[#4A4A4A]">
-                                The Before State:
-                            </Label>
-                            <p className="text-sm text-muted-foreground">What was broken/painful/manual before you stepped in?</p>
-                            <Textarea
-                                id="beforeState"
-                                className="min-h-[100px]"
-                                value={data.beforeState}
-                                onChange={(e) => updateData({ beforeState: e.target.value })}
-                            />
-                        </div>
 
-                        <div className="space-y-4">
-                            <Label className="text-base text-[#4A4A4A]">The After State:</Label>
-                            <p className="text-sm text-muted-foreground">What specifically changes in their business/day-to-day?</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex items-center gap-2">
-                                    <Label className="shrink-0 font-normal">Time saved: </Label>
-                                    <Input
-                                        size={5}
-                                        className="h-8 w-24"
-                                        placeholder="hrs/week"
-                                        value={data.afterStateMetrics?.timeSaved}
-                                        onChange={(e) => updateMetrics('timeSaved', e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Label className="shrink-0 font-normal">Revenue increase: $</Label>
-                                    <Input
-                                        className="h-8 w-32"
-                                        value={data.afterStateMetrics?.revenueIncrease}
-                                        onChange={(e) => updateMetrics('revenueIncrease', e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Label className="shrink-0 font-normal">Cost reduction: $</Label>
-                                    <Input
-                                        className="h-8 w-32"
-                                        value={data.afterStateMetrics?.costReduction}
-                                        onChange={(e) => updateMetrics('costReduction', e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Label className="shrink-0 font-normal">Process eliminated: </Label>
-                                    <Input
-                                        className="h-8"
-                                        value={data.afterStateMetrics?.manualEliminated}
-                                        onChange={(e) => updateMetrics('manualEliminated', e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 col-span-full">
-                                    <Label className="shrink-0 font-normal">Other:</Label>
-                                    <Input
-                                        className="h-8"
-                                        value={data.afterStateMetrics?.other}
-                                        onChange={(e) => updateMetrics('other', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Service Economics */}
-                <div className="space-y-8 border-b border-gray-100 pb-8">
+                <div className="space-y-8 pb-8 border-b border-gray-100">
                     <h3 className="text-lg font-medium text-[#4A4A4A]">Service Economics</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <Label className="text-base">Pricing model:</Label>
+                    <div className="space-y-6">
+                        {/* Pricing Model - Vertical */}
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">Pricing model:</Label>
                             <RadioGroup
                                 value={data.pricingModel}
                                 onValueChange={(val) => updateData({ pricingModel: val as '' | 'monthly' | 'project' | 'performance' | 'hybrid' })}
-                                className="grid gap-2"
+                                className="flex flex-col gap-3"
                             >
                                 {[
                                     { id: 'monthly', label: 'Monthly retainer' },
@@ -202,46 +167,56 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                     { id: 'performance', label: 'Performance-based' },
                                     { id: 'hybrid', label: 'Hybrid' },
                                 ].map((opt) => (
-                                    <div key={opt.id} className="flex items-center space-x-2">
+                                    <div key={opt.id} className="flex items-center space-x-3">
                                         <RadioGroupItem value={opt.id} id={`price-${opt.id}`} />
-                                        <Label htmlFor={`price-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                        <Label htmlFor={`price-${opt.id}`} className="font-normal text-sm cursor-pointer">{opt.label}</Label>
                                     </div>
                                 ))}
                             </RadioGroup>
-                            <div className="flex items-center gap-2 pt-1">
-                                <Label className="shrink-0 font-normal">Details: $</Label>
-                                <Input
-                                    className="h-8"
-                                    value={data.pricingDetails || ''}
-                                    onChange={(e) => updateData({ pricingDetails: e.target.value })}
-                                />
+
+                            <div className="flex items-center gap-3 pt-1">
+                                <Label className="shrink-0 font-normal text-xs text-muted-foreground">Price Details:</Label>
+                                <div className="relative flex-1 max-w-[180px]">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                                    <Input
+                                        className="h-9 pl-6 text-sm"
+                                        placeholder="e.g. 5,000"
+                                        value={data.pricingDetails || ''}
+                                        onChange={(e) => updateData({ pricingDetails: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
+                        {/* Additional Economic Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label>Setup/onboarding fee:</Label>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground">$</span>
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Setup Fee</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                                     <Input
-                                        className="h-8"
+                                        className="h-10 pl-6"
+                                        placeholder="0.00"
                                         value={data.setupFee}
                                         onChange={(e) => updateData({ setupFee: e.target.value })}
                                     />
                                 </div>
                             </div>
+
                             <div className="space-y-2">
-                                <Label>Contract length (months):</Label>
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contract Length</Label>
                                 <Input
-                                    className="h-8"
+                                    className="h-10"
+                                    placeholder="e.g. 6 months"
                                     value={data.contractLength}
                                     onChange={(e) => updateData({ contractLength: e.target.value })}
                                 />
                             </div>
+
                             <div className="space-y-2">
-                                <Label>Time to results:</Label>
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Time to Results</Label>
                                 <Input
-                                    className="h-8"
+                                    className="h-10"
                                     placeholder="e.g. 30 days"
                                     value={data.timeToResults}
                                     onChange={(e) => updateData({ timeToResults: e.target.value })}
@@ -252,34 +227,36 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                 </div>
 
                 {/* Delivery Capacity */}
-                <div className="space-y-6 border-b border-gray-100 pb-8">
+                <div className="space-y-8 pb-8 border-b border-gray-100">
                     <h3 className="text-lg font-medium text-[#4A4A4A]">Delivery Capacity</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label>Current clients:</Label>
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Clients</Label>
                                 <Input
-                                    className="h-8"
+                                    className="h-10"
+                                    placeholder="e.g. 12"
                                     value={data.currentClientsCount}
                                     onChange={(e) => updateData({ currentClientsCount: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Can take on ___ more:</Label>
+                                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Available Slots</Label>
                                 <Input
-                                    className="h-8"
+                                    className="h-10"
+                                    placeholder="e.g. 3"
                                     value={data.capacityCount}
                                     onChange={(e) => updateData({ capacityCount: e.target.value })}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <Label className="text-base">Delivery bottleneck:</Label>
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">Delivery bottleneck:</Label>
                             <RadioGroup
                                 value={data.deliveryBottleneck}
                                 onValueChange={(val) => updateData({ deliveryBottleneck: val as '' | 'time' | 'team' | 'tools' | 'other' })}
-                                className="grid gap-2"
+                                className="flex flex-col gap-3"
                             >
                                 {[
                                     { id: 'time', label: 'Your time' },
@@ -287,19 +264,22 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                     { id: 'tools', label: 'Tool limitations' },
                                     { id: 'other', label: 'Other' },
                                 ].map((opt) => (
-                                    <div key={opt.id} className="flex items-center space-x-2">
+                                    <div key={opt.id} className="flex items-center space-x-3">
                                         <RadioGroupItem value={opt.id} id={`bot-${opt.id}`} />
-                                        <Label htmlFor={`bot-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                        <Label htmlFor={`bot-${opt.id}`} className="font-normal text-sm cursor-pointer">{opt.label}</Label>
                                     </div>
                                 ))}
                             </RadioGroup>
+
                             {data.deliveryBottleneck === 'other' && (
-                                <Input
-                                    className="h-8 mt-1"
-                                    placeholder="Please specify"
-                                    value={data.deliveryBottleneckOther || ''}
-                                    onChange={(e) => updateData({ deliveryBottleneckOther: e.target.value })}
-                                />
+                                <div className="pt-1 pl-7">
+                                    <Input
+                                        className="h-9"
+                                        placeholder="Please specify bottleneck"
+                                        value={data.deliveryBottleneckOther || ''}
+                                        onChange={(e) => updateData({ deliveryBottleneckOther: e.target.value })}
+                                    />
+                                </div>
                             )}
                         </div>
                     </div>
@@ -308,13 +288,13 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                 {/* Business Stage & Scale */}
                 <div className="space-y-6 pt-4">
                     <h3 className="text-lg font-medium text-[#4A4A4A]">Business Stage & Scale</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <Label className="text-base">Current Stage:</Label>
+                    <div className="space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">Current Stage:</Label>
                             <RadioGroup
                                 value={data.stage}
                                 onValueChange={(val) => updateData({ stage: val })}
-                                className="grid gap-2"
+                                className="flex flex-col gap-3"
                             >
                                 {[
                                     { id: 'pre-seed', label: 'Pre-seed / Ideation' },
@@ -322,31 +302,22 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                     { id: 'series-a', label: 'Series A+' },
                                     { id: 'bootstrapped', label: 'Bootstrapped & Profitable' },
                                 ].map((opt) => (
-                                    <div key={opt.id} className="flex items-center space-x-2">
+                                    <div key={opt.id} className="flex items-center space-x-3">
                                         <RadioGroupItem value={opt.id} id={`stage-${opt.id}`} />
-                                        <Label htmlFor={`stage-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                        <Label htmlFor={`stage-${opt.id}`} className="font-normal text-sm cursor-pointer">{opt.label}</Label>
                                     </div>
                                 ))}
                             </RadioGroup>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Current Revenue (ARR or MRR):</Label>
-                                <Input
-                                    placeholder="e.g. $50k MRR"
-                                    value={data.totalRevenue}
-                                    onChange={(e) => updateData({ totalRevenue: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Funding Status:</Label>
-                                <Input
-                                    placeholder="e.g. $2M Seed raised"
-                                    value={data.fundingAmount}
-                                    onChange={(e) => updateData({ fundingAmount: e.target.value })}
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Revenue</Label>
+                            <Input
+                                className="h-10"
+                                placeholder="e.g. $50k MRR"
+                                value={data.totalRevenue}
+                                onChange={(e) => updateData({ totalRevenue: e.target.value })}
+                            />
                         </div>
                     </div>
                 </div>
@@ -356,7 +327,7 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
 
     return (
         <StepContent
-            title="Product Strategy"
+            title="About Your Product"
             description="Define the core mechanics and economics of your business."
         >
             {/* What You Actually Built section unchanged */}
@@ -376,32 +347,32 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                         />
                     </div>
 
-                    <div className="space-y-4 pt-2">
-                        <Label className="text-base text-[#4A4A4A]">Walk through the core mechanic:</Label>
-                        <div className="grid gap-4">
+                    <div className="space-y-6">
+                        <Label className="text-base text-[#4A4A4A] font-medium">Walk through the core mechanic:</Label>
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="userDoes" className="font-normal text-muted-foreground">User does:</Label>
+                                <Label htmlFor="userDoes" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">User does</Label>
                                 <Input
                                     id="userDoes"
-                                    placeholder="Enter action details..."
+                                    placeholder="e.g. Uploads a source document"
                                     value={data.userDoes}
                                     onChange={(e) => updateData({ userDoes: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="productDoes" className="font-normal text-muted-foreground">Product does:</Label>
+                                <Label htmlFor="productDoes" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Product does</Label>
                                 <Input
                                     id="productDoes"
-                                    placeholder="Enter process details..."
+                                    placeholder="e.g. Analyzes key metrics and generates a report"
                                     value={data.productDoes}
                                     onChange={(e) => updateData({ productDoes: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="userGets" className="font-normal text-muted-foreground">User gets:</Label>
+                                <Label htmlFor="userGets" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">User gets</Label>
                                 <Input
                                     id="userGets"
-                                    placeholder="Enter outcome details..."
+                                    placeholder="e.g. A downloadable CSV of categorized leads"
                                     value={data.userGets}
                                     onChange={(e) => updateData({ userGets: e.target.value })}
                                 />
@@ -409,54 +380,31 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="beforeState">
-                                What&apos;s the &apos;Before State&apos; problem?
-                            </Label>
-                            <p className="text-xs text-muted-foreground">What was broken/painful/frustrating before your product existed?</p>
-                            <Textarea
-                                id="beforeState"
-                                className="min-h-[100px]"
-                                value={data.beforeState}
-                                onChange={(e) => updateData({ beforeState: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="afterState">
-                                What&apos;s the &apos;After State&apos; outcome?
-                            </Label>
-                            <p className="text-xs text-muted-foreground">Not features. What actually changes in their work/life?</p>
-                            <Textarea
-                                id="afterState"
-                                className="min-h-[100px]"
-                                value={data.afterState}
-                                onChange={(e) => updateData({ afterState: e.target.value })}
-                            />
-                        </div>
-                    </div>
+
                 </div>
             </div>
 
             {/* The Economics */}
-            <div className="space-y-6 border-b border-gray-100 pb-8">
+            <div className="space-y-8 pb-8 border-b border-gray-100">
                 <h3 className="text-lg font-medium text-[#4A4A4A]">The Economics</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label htmlFor="price">Price</Label>
+                            <Label htmlFor="price" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Price</Label>
                             <Input
                                 id="price"
+                                className="h-10"
                                 placeholder="e.g. $100/month"
                                 value={data.price}
                                 onChange={(e) => updateData({ price: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="salesCycle">Average sales cycle (days)</Label>
+                            <Label htmlFor="salesCycle" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg. Sales Cycle (Days)</Label>
                             <Input
                                 id="salesCycle"
+                                className="h-10"
                                 type="number"
                                 placeholder="e.g. 14"
                                 value={data.salesCycle}
@@ -466,50 +414,52 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                     </div>
 
                     <div className="space-y-3">
-                        <Label>Decision Process</Label>
+                        <Label className="text-sm font-medium">Decision Process:</Label>
                         <RadioGroup
                             value={data.decisionProcess}
                             onValueChange={(val) => updateData({ decisionProcess: val })}
-                            className="flex flex-col gap-2"
+                            className="flex flex-col gap-3"
                         >
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                                 <RadioGroupItem value="first-call" id="dec-first" />
-                                <Label htmlFor="dec-first" className="font-normal cursor-pointer">Decides on first call</Label>
+                                <Label htmlFor="dec-first" className="font-normal text-sm cursor-pointer">Decides on first call</Label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                                 <RadioGroupItem value="trial" id="dec-trial" />
-                                <Label htmlFor="dec-trial" className="font-normal cursor-pointer">Needs trial period</Label>
+                                <Label htmlFor="dec-trial" className="font-normal text-sm cursor-pointer">Needs trial period</Label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                                 <RadioGroupItem value="committee" id="dec-committee" />
-                                <Label htmlFor="dec-committee" className="font-normal cursor-pointer">Committee/team decision</Label>
+                                <Label htmlFor="dec-committee" className="font-normal text-sm cursor-pointer">Committee/team decision</Label>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                                 <RadioGroupItem value="other" id="dec-other" />
-                                <Label htmlFor="dec-other" className="font-normal cursor-pointer">Other</Label>
+                                <Label htmlFor="dec-other" className="font-normal text-sm cursor-pointer">Other</Label>
                             </div>
                         </RadioGroup>
                         {data.decisionProcess === 'other' && (
-                            <Input
-                                placeholder="Please specify"
-                                value={data.decisionProcessOther || ''}
-                                onChange={(e) => updateData({ decisionProcessOther: e.target.value })}
-                            />
+                            <div className="pt-1 pl-7">
+                                <Input
+                                    placeholder="Please specify decision process"
+                                    value={data.decisionProcessOther || ''}
+                                    onChange={(e) => updateData({ decisionProcessOther: e.target.value })}
+                                />
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
             {/* Business Stage & Scale */}
-            <div className="space-y-6 pt-8">
+            <div className="space-y-8 pt-4">
                 <h3 className="text-lg font-medium text-[#4A4A4A]">Business Stage & Scale</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                        <Label className="text-base">Current Stage:</Label>
+                <div className="space-y-6">
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Current Stage:</Label>
                         <RadioGroup
                             value={data.stage}
                             onValueChange={(val) => updateData({ stage: val })}
-                            className="grid gap-2"
+                            className="flex flex-col gap-3"
                         >
                             {[
                                 { id: 'pre-seed', label: 'Pre-seed / Ideation' },
@@ -517,26 +467,28 @@ export function ProductStrategy({ data, updateData }: ProductStrategyProps) {
                                 { id: 'series-a', label: 'Series A+' },
                                 { id: 'bootstrapped', label: 'Bootstrapped & Profitable' },
                             ].map((opt) => (
-                                <div key={opt.id} className="flex items-center space-x-2">
+                                <div key={opt.id} className="flex items-center space-x-3">
                                     <RadioGroupItem value={opt.id} id={`stage-${opt.id}`} />
-                                    <Label htmlFor={`stage-${opt.id}`} className="font-normal cursor-pointer">{opt.label}</Label>
+                                    <Label htmlFor={`stage-${opt.id}`} className="font-normal text-sm cursor-pointer">{opt.label}</Label>
                                 </div>
                             ))}
                         </RadioGroup>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label>Current Revenue (ARR or MRR):</Label>
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Revenue (ARR/MRR)</Label>
                             <Input
+                                className="h-10"
                                 placeholder="e.g. $50k MRR"
                                 value={data.totalRevenue}
                                 onChange={(e) => updateData({ totalRevenue: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Funding Status:</Label>
+                            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Funding Status</Label>
                             <Input
+                                className="h-10"
                                 placeholder="e.g. $2M Seed raised"
                                 value={data.fundingAmount}
                                 onChange={(e) => updateData({ fundingAmount: e.target.value })}

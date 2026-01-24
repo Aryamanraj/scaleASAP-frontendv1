@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { ArrowLongRightIcon, ArrowPathIcon, ArrowLongLeftIcon, PlayIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { ArrowLongRightIcon, ArrowPathIcon, ArrowLongLeftIcon, PlayIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ICPAccordion } from './ICPAccordion'
@@ -157,7 +157,10 @@ const formatStatus = (status: string) => {
 }
 
 export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, initialChatHistory, isFollowUp = false, previousExperiments = [], onBack }: DiscoveryChatProps) {
-    const [messages, setMessages] = useState<Message[]>([])
+    const [messages, setMessages] = useState<Message[]>(() => {
+        if (isFollowUp) return []
+        return initialChatHistory || []
+    })
     const [input, setInput] = useState('')
     const [currentPlaceholder, setCurrentPlaceholder] = useState('My main objective today is...')
     const [isLoading, setIsLoading] = useState(false)
@@ -267,46 +270,44 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
         if (hasInitialized.current) return
         hasInitialized.current = true
 
-        // For follow-up sessions, we ALWAYS start fresh to discover new ICPs
-        if (isFollowUp) {
-            localStorage.removeItem(`chat_${workspaceId}_followup`)
-            setMessages([])
-            setIsLoading(true)
-            handleSend(true, [])
-            return
-        }
+        const storageKey = isFollowUp ? `chat_${workspaceId}_followup` : `chat_${workspaceId}`
+        const placeholderKey = isFollowUp ? `placeholder_${workspaceId}_followup` : `placeholder_${workspaceId}`
 
-        // First check if we have chat history from the workspace (Supabase)
+        // 1. Check if we have chat history passed as props (Supabase)
+        // Note: initialChatHistory is already filtered to be undefined in follow-up mode by the parent
         if (initialChatHistory && initialChatHistory.length > 0) {
             setMessages(initialChatHistory)
             return
         }
 
-        // Fall back to localStorage for backward compatibility
-        const savedMessages = localStorage.getItem(`chat_${workspaceId}`)
-        const savedPlaceholder = localStorage.getItem(`placeholder_${workspaceId}`)
+        // 2. Check localStorage for current mode
+        const savedMessages = localStorage.getItem(storageKey)
+        const savedPlaceholder = localStorage.getItem(placeholderKey)
 
         if (savedMessages) {
             const parsed = JSON.parse(savedMessages)
-            setMessages(parsed)
-        } else {
-            // Trigger dynamic AI greeting if no messages
-            setIsLoading(true) // Immediate visual feedback
-            handleSend(true, [])
+            if (parsed.length > 0) {
+                setMessages(parsed)
+                if (savedPlaceholder) setCurrentPlaceholder(savedPlaceholder)
+                return
+            }
         }
 
-        if (savedPlaceholder) {
-            setCurrentPlaceholder(savedPlaceholder)
-        }
+        // 3. If no history, trigger fresh AI greeting
+        setIsLoading(true)
+        handleSend(true, [])
     }, [workspaceId, handleSend, initialChatHistory, isFollowUp])
 
     // Save session
     useEffect(() => {
+        const storageKey = isFollowUp ? `chat_${workspaceId}_followup` : `chat_${workspaceId}`
+        const placeholderKey = isFollowUp ? `placeholder_${workspaceId}_followup` : `placeholder_${workspaceId}`
+
         if (messages.length > 0) {
-            localStorage.setItem(`chat_${workspaceId}`, JSON.stringify(messages))
+            localStorage.setItem(storageKey, JSON.stringify(messages))
         }
-        localStorage.setItem(`placeholder_${workspaceId}`, currentPlaceholder)
-    }, [messages, currentPlaceholder, workspaceId])
+        localStorage.setItem(placeholderKey, currentPlaceholder)
+    }, [messages, currentPlaceholder, workspaceId, isFollowUp])
 
     // Scroll to bottom
     useEffect(() => {
@@ -328,8 +329,11 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
     }, [messages, isLoading])
 
     const handleRestart = () => {
-        localStorage.removeItem(`chat_${workspaceId}`)
-        localStorage.removeItem(`placeholder_${workspaceId}`)
+        const storageKey = isFollowUp ? `chat_${workspaceId}_followup` : `chat_${workspaceId}`
+        const placeholderKey = isFollowUp ? `placeholder_${workspaceId}_followup` : `placeholder_${workspaceId}`
+
+        localStorage.removeItem(storageKey)
+        localStorage.removeItem(placeholderKey)
 
         setMessages([])
         setShowExperiments(false) // Reset experiments state
@@ -347,51 +351,32 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             ` }} />
 
-            {/* Back Button for Follow-up Mode */}
-            {isFollowUp && onBack && (
-                <div className="absolute top-4 left-4 z-10">
-                    <Button
-                        onClick={onBack}
-                        variant="ghost"
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-                    >
-                        <ArrowLongLeftIcon className="size-4" />
-                        <span className="font-medium">Back to Experiments</span>
-                    </Button>
+            {/* Header for Side Curtain */}
+            <div className="p-6 pb-2 border-b border-[#EEEEEE] flex items-center justify-between bg-white z-10">
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ICP Discovery</span>
+                    <h2 className="text-lg font-bold text-[#333333] tracking-tight">
+                        {isFollowUp ? 'Expand Strategy' : 'Strategy Chat'}
+                    </h2>
                 </div>
-            )}
+                <div className="flex items-center gap-2">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="size-8 flex items-center justify-center border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            <XMarkIcon className="size-4 text-gray-400" />
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-6 pt-12 pb-48 no-scrollbar"
+                className="flex-1 overflow-y-auto px-6 pt-6 pb-40 no-scrollbar"
                 ref={scrollRef}
             >
-                <div className="max-w-[700px] mx-auto space-y-12 transition-all">
-                    {/* Experiment Summary as System Message for Follow-up Mode */}
-                    {isFollowUp && previousExperiments.length > 0 && (
-                        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="size-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                                        <span className="text-xs">ℹ️</span>
-                                    </div>
-                                    <div className="flex-1 space-y-2">
-                                        <p className="text-xs font-semibold text-blue-900">Current Experiments ({previousExperiments.length})</p>
-                                        <div className="space-y-1.5">
-                                            {previousExperiments.slice(0, 5).map((exp) => (
-                                                <div key={exp.id} className="flex items-center gap-2 text-xs">
-                                                    <span className="text-blue-700 font-medium truncate flex-1">{exp.name}</span>
-                                                    <Badge variant="outline" className={cn("text-[10px] py-0 px-1.5 h-5 capitalize border", getStatusColor(exp.status))}>
-                                                        {formatStatus(exp.status)}
-                                                    </Badge>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <div className="w-full space-y-8 transition-all">
                     {messages.map((m, i) => {
                         const { text, icpData } = m.role === 'assistant' ? parseContent(m.content) : { text: m.content, icpData: null }
                         return (
@@ -464,10 +449,10 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                 </div>
             </div>
 
-            {/* Sticky Bottom Input Bar (Refined Style from Image) */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 pt-0 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none">
-                <div className="max-w-[700px] mx-auto pointer-events-auto">
-                    <div className="bg-white border border-[#EEEEEE] rounded-[22px] transition-all duration-200 focus-within:border-[#43B97B] focus-within:ring-1 focus-within:ring-[#43B97B]/10 overflow-hidden flex flex-col min-h-[120px]">
+            {/* Sticky Bottom Input Bar (Fixed at the bottom of the curtain) */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none backdrop-blur-[2px] border-t border-gray-50/50">
+                <div className="w-full pointer-events-auto">
+                    <div className="bg-white border border-[#EEEEEE] rounded-[22px] transition-all duration-200 focus-within:border-[#43B97B] focus-within:ring-1 focus-within:ring-[#43B97B]/10 overflow-hidden flex flex-col min-h-[100px] shadow-sm">
                         <textarea
                             placeholder={currentPlaceholder}
                             value={input}
@@ -478,10 +463,10 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                     handleSend()
                                 }
                             }}
-                            className="w-full bg-transparent border-none resize-none px-5 py-4 text-[15px] focus:ring-0 placeholder:text-gray-400 font-medium min-h-[70px] outline-none"
+                            className="w-full bg-transparent border-none resize-none px-4 py-3 text-[14px] focus:ring-0 placeholder:text-gray-400 font-medium min-h-[60px] outline-none"
                         />
-                        <div className="flex items-center justify-between px-4 pb-4 mt-auto">
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between px-3 pb-3 mt-auto">
+                            <div className="flex items-center gap-1.5">
                                 <ShadcnTooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -512,26 +497,26 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                                     disabled={!showExperiments || isCreatingExperiments}
                                                     variant="outline"
                                                     className={cn(
-                                                        "flex items-center gap-2 px-3 py-1.5 h-auto rounded-lg transition-colors border bg-white hover:bg-gray-50 group/run shadow-none",
+                                                        "flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-lg transition-colors border bg-white hover:bg-gray-50 group/run shadow-none",
                                                         "disabled:bg-white disabled:border-[#EEEEEE] disabled:text-gray-300 disabled:opacity-100 disabled:cursor-not-allowed",
                                                         showExperiments
                                                             ? "border-[#EEEEEE] text-[#4A4A4A] hover:text-[#43B97B]"
                                                             : ""
                                                     )}
                                                 >
-                                                    <span className="text-[13px] font-medium">
+                                                    <span className="text-[12px] font-medium">
                                                         {isCreatingExperiments ? 'Creating...' : 'Run experiments'}
                                                     </span>
                                                     {isCreatingExperiments ? (
-                                                        <ArrowPathIcon className="size-3.5 animate-spin text-[#4A4A4A]" />
+                                                        <ArrowPathIcon className="size-3 animate-spin text-[#4A4A4A]" />
                                                     ) : (
-                                                        <PlayIcon className={cn("size-3.5 transition-colors", showExperiments ? "text-[#4A4A4A] group-hover/run:text-[#43B97B]" : "text-gray-300")} />
+                                                        <PlayIcon className={cn("size-3 transition-colors", showExperiments ? "text-[#4A4A4A] group-hover/run:text-[#43B97B]" : "text-gray-300")} />
                                                     )}
                                                 </Button>
                                             </span>
                                         </TooltipTrigger>
                                         {!showExperiments && (
-                                            <TooltipContent side="top" className="max-w-[200px] text-center bg-black text-white border-black">
+                                            <TooltipContent side="top" className="max-w-[180px] text-center bg-black text-white border-black text-[11px]">
                                                 <p>Active once experiments are defined.</p>
                                             </TooltipContent>
                                         )}
@@ -540,9 +525,9 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
 
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#EEEEEE] bg-white hover:bg-gray-50 transition-colors group/restart text-red-500/80 hover:text-red-600">
-                                            <span className="text-[13px] font-medium">Restart Chat</span>
-                                            <ArrowPathIcon className="size-3.5 text-red-400 group-hover/restart:text-red-500" />
+                                        <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#EEEEEE] bg-white hover:bg-gray-50 transition-colors group/restart text-red-500/80 hover:text-red-600 shadow-none">
+                                            <span className="text-[12px] font-medium">Restart</span>
+                                            <ArrowPathIcon className="size-3 text-red-400 group-hover/restart:text-red-500" />
                                         </button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -571,11 +556,11 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                 onClick={() => handleSend()}
                                 disabled={isLoading || !input.trim()}
                                 className={cn(
-                                    "h-9 w-9 rounded-full transition-all duration-300 flex items-center justify-center p-0 bg-[#43B97B] hover:bg-[#3CA66F] text-white",
+                                    "h-8 w-8 rounded-full transition-all duration-300 flex items-center justify-center p-0 bg-[#43B97B] hover:bg-[#3CA66F] text-white",
                                     !input.trim() && "opacity-50"
                                 )}
                             >
-                                {isLoading ? <ArrowPathIcon className="size-4 animate-spin" /> : <ArrowLongRightIcon className="size-4" />}
+                                {isLoading ? <ArrowPathIcon className="size-3.5 animate-spin" /> : <ArrowLongRightIcon className="size-3.5" />}
                             </Button>
                         </div>
                     </div>
