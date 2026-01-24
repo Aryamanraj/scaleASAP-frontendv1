@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { ContentEngineService } from '@/lib/content-engine/service'
 
 export interface Citation {
     source_name: string
@@ -189,6 +190,40 @@ export async function getLeads(campaignId: string) {
     }
 }
 
+export async function getAllLeads(workspaceId: string) {
+    try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            console.log('getAllLeads: No authenticated user')
+            return []
+        }
+
+        const { data: leads, error } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('workspace_id', workspaceId)
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            console.error('Error fetching all leads:', error)
+            return []
+        }
+
+        // Return mock data ONLY if no real leads found and we are in a demo/dev environment
+        // For now, let's keep it consistent with getLeads
+        if (!leads || leads.length === 0) {
+            return MOCK_LEADS.map(l => ({ ...l, workspace_id: workspaceId }))
+        }
+
+        return leads as Lead[]
+    } catch (error) {
+        console.error('Unexpected error in getAllLeads:', error)
+        return []
+    }
+}
+
 export async function addLeads(campaignId: string, workspaceId: string, leads: Partial<Lead>[]) {
     try {
         const supabase = await createClient()
@@ -253,4 +288,41 @@ export async function updateLead(leadId: string, data: Partial<Lead>) {
 
 export async function logLeadOutcome(leadId: string, outcome: Lead['outcome'], reason?: string) {
     return updateLead(leadId, { outcome, outcome_reason: reason })
+}
+
+export async function generateOutreachAction(lead: Lead, config: { format: string, isFollowUp: boolean }) {
+    try {
+        // Fetch or use mock business context
+        const business = ContentEngineService.getShipSyncContext();
+
+        const prospect = {
+            firstName: lead.full_name.split(' ')[0],
+            lastName: lead.full_name.split(' ').slice(1).join(' '),
+            role: lead.job_title || 'Professional',
+            company: lead.company || 'Their Company',
+            fullProfile: lead.enrichment_data?.summary || '',
+            rawActivity: lead.enrichment_data?.signals?.map(s => s.description).join('\n') || '',
+            icpCategory: 'Target Logistics'
+        };
+
+        const fit = {
+            logicalConnection: lead.enrichment_data?.summary || 'Good fit based on role and company.',
+            warmthLevel: config.isFollowUp ? 'follow_up' : 'cold',
+            shouldProceed: true
+        };
+
+        const result = await ContentEngineService.generateOutreach({
+            business,
+            prospect,
+            fit
+        });
+
+        // Potentially save the generated message to the lead
+        await updateLead(lead.id, { outbound_message: result.followUpDM });
+
+        return result;
+    } catch (error) {
+        console.error('Error generating outreach:', error)
+        throw error
+    }
 }

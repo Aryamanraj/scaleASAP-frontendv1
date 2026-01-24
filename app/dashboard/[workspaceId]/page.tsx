@@ -18,7 +18,10 @@ import { saveDiscoveryFeedback } from '@/app/actions/workspaces'
 import { getCampaigns, Campaign, createCampaign } from '@/app/actions/campaigns'
 import { CampaignsList } from '@/components/dashboard/CampaignsList'
 import { CampaignDetailCurtain } from '@/components/dashboard/CampaignDetailCurtain'
-import { Lead } from '@/app/actions/leads'
+import { LeadDetailCurtain } from '@/components/dashboard/LeadDetailCurtain'
+import { NewCampaignCurtain } from '@/components/dashboard/NewCampaignCurtain'
+import { Lead, getAllLeads } from '@/app/actions/leads'
+import { LeadsList } from '@/components/dashboard/LeadsList'
 import { Button } from '@/components/ui/button'
 
 export default function DashboardPage() {
@@ -38,6 +41,9 @@ export default function DashboardPage() {
     const [showFeedback, setShowFeedback] = useState(false)
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+    const [showNewCampaignCurtain, setShowNewCampaignCurtain] = useState(false)
+    const [allLeads, setAllLeads] = useState<Lead[]>([])
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
 
     useEffect(() => {
         const load = async () => {
@@ -73,15 +79,17 @@ export default function DashboardPage() {
         load()
     }, [workspaceId, router])
 
-    // Load experiments and campaigns
+    // Load experiments, campaigns, and leads
     useEffect(() => {
         const loadData = async () => {
-            const [exps, camps] = await Promise.all([
+            const [exps, camps, leads] = await Promise.all([
                 getExperiments(workspaceId),
-                getCampaigns(workspaceId)
+                getCampaigns(workspaceId),
+                getAllLeads(workspaceId)
             ])
             setExperiments(exps)
             setCampaigns(camps)
+            setAllLeads(leads)
             // If we have experiments but haven't just created them, don't show the zero state
             if (exps.length > 0 && !hasJustCreatedExperiments) {
                 setHasJustCreatedExperiments(false)
@@ -92,11 +100,12 @@ export default function DashboardPage() {
 
     const handleTabChange = (tab: string) => {
         setCurrentTab(tab)
-        // Close curtains when switching tabs
-        if (tab !== 'experiments') setSelectedExperiment(null)
-        if (tab !== 'campaigns') {
-            setSelectedCampaign(null)
-        }
+        // Close all curtains when switching tabs
+        setShowDiscoveryChat(false)
+        setSelectedExperiment(null)
+        setSelectedCampaign(null)
+        setShowNewCampaignCurtain(false)
+        setSelectedLead(null)
     }
 
     const handleExperimentsCreated = async () => {
@@ -168,11 +177,13 @@ export default function DashboardPage() {
                                     setShowDiscoveryChat(true)
                                     setSelectedExperiment(null)
                                     setSelectedCampaign(null)
+                                    setShowNewCampaignCurtain(false)
                                 }}
                                 onExperimentSelect={(exp) => {
                                     setSelectedExperiment(exp)
                                     setShowDiscoveryChat(false)
                                     setSelectedCampaign(null)
+                                    setShowNewCampaignCurtain(false)
                                 }}
                                 selectedId={selectedExperiment?.id}
                                 hasOngoingChat={hasChatHistory}
@@ -205,14 +216,16 @@ export default function DashboardPage() {
                                 experiments={experiments}
                                 onCampaignSelect={(c: Campaign) => {
                                     setSelectedCampaign(c)
+                                    setShowNewCampaignCurtain(false)
                                     setSelectedExperiment(null)
                                     setShowDiscoveryChat(false)
                                 }}
                                 selectedId={selectedCampaign?.id}
                                 onNewCampaign={() => {
-                                    setShowDiscoveryChat(true)
+                                    setShowNewCampaignCurtain(true)
                                     setSelectedCampaign(null)
                                     setSelectedExperiment(null)
+                                    setShowDiscoveryChat(false)
                                 }}
                                 hasOngoingChat={hasChatHistory}
                                 isDiscoveryOpen={showDiscoveryChat}
@@ -220,15 +233,12 @@ export default function DashboardPage() {
                         </div>
                     )}
                     {currentTab === 'library' && (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
-                            <div className="size-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                <span className="text-2xl">📚</span>
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-[#333333]">Lead Library</h2>
-                                <p className="text-gray-500 max-w-sm mx-auto">Your repository of verified leads and their engagement history. Coming soon.</p>
-                            </div>
-                        </div>
+                        <LeadsList
+                            leads={allLeads}
+                            campaigns={campaigns}
+                            onLeadSelect={(lead) => setSelectedLead(lead)}
+                            selectedId={selectedLead?.id}
+                        />
                     )}
                     {currentTab === 'settings' && (
                         <Settings
@@ -242,10 +252,18 @@ export default function DashboardPage() {
             {/* Curtains Container - Unified sliding orchestration */}
             <div className={cn(
                 "flex shrink-0 transition-all duration-500 ease-in-out overflow-hidden h-full",
-                ((showDiscoveryChat || !!selectedExperiment) && currentTab === 'experiments') || ((showDiscoveryChat || !!selectedCampaign) && currentTab === 'campaigns')
+                ((showDiscoveryChat || !!selectedExperiment) && currentTab === 'experiments') || ((showDiscoveryChat || !!selectedCampaign || showNewCampaignCurtain) && currentTab === 'campaigns') || (!!selectedLead && currentTab === 'library')
                     ? "ml-2"
                     : "ml-0"
             )}>
+                {/* Lead Detail Curtain (for Library tab) */}
+                <LeadDetailCurtain
+                    lead={selectedLead}
+                    campaign={campaigns.find(c => c.id === selectedLead?.campaign_id) || null}
+                    isOpen={!!selectedLead && currentTab === 'library'}
+                    onClose={() => setSelectedLead(null)}
+                />
+
                 {/* Discovery Curtain */}
                 <div className={cn(
                     "bg-white rounded-2xl border border-[#EEEEEE] shadow-sm transition-all duration-500 ease-in-out flex flex-col overflow-hidden h-full",
@@ -275,6 +293,15 @@ export default function DashboardPage() {
                     experiment={experiments.find(e => e.id === selectedCampaign?.experiment_id) || null}
                     isOpen={!!selectedCampaign && currentTab === 'campaigns'}
                     onClose={() => setSelectedCampaign(null)}
+                />
+
+                <NewCampaignCurtain
+                    isOpen={showNewCampaignCurtain && currentTab === 'campaigns'}
+                    onClose={() => setShowNewCampaignCurtain(false)}
+                    onCreate={(data) => {
+                        console.log('New campaign data:', data)
+                        setShowNewCampaignCurtain(false)
+                    }}
                 />
             </div>
 

@@ -363,9 +363,9 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                     {onBack && (
                         <button
                             onClick={onBack}
-                            className="size-8 flex items-center justify-center border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                            className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
                         >
-                            <XMarkIcon className="size-4 text-gray-400" />
+                            <XMarkIcon className="size-4 text-[#333333]" />
                         </button>
                     )}
                 </div>
@@ -452,7 +452,7 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
             {/* Sticky Bottom Input Bar (Fixed at the bottom of the curtain) */}
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none backdrop-blur-[2px] border-t border-gray-50/50">
                 <div className="w-full pointer-events-auto">
-                    <div className="bg-white border border-[#EEEEEE] rounded-[22px] transition-all duration-200 focus-within:border-[#43B97B] focus-within:ring-1 focus-within:ring-[#43B97B]/10 overflow-hidden flex flex-col min-h-[100px] shadow-sm">
+                    <div className="bg-white border border-[#EEEEEE] rounded-[22px] transition-all duration-200 focus-within:border-[#43B97B] focus-within:ring-1 focus-within:ring-[#43B97B]/10 overflow-hidden flex flex-col min-h-[100px]">
                         <textarea
                             placeholder={currentPlaceholder}
                             value={input}
@@ -497,7 +497,7 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                                     disabled={!showExperiments || isCreatingExperiments}
                                                     variant="outline"
                                                     className={cn(
-                                                        "flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-lg transition-colors border bg-white hover:bg-gray-50 group/run shadow-none",
+                                                        "flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-lg transition-colors border bg-white hover:bg-gray-50 group/run",
                                                         "disabled:bg-white disabled:border-[#EEEEEE] disabled:text-gray-300 disabled:opacity-100 disabled:cursor-not-allowed",
                                                         showExperiments
                                                             ? "border-[#EEEEEE] text-[#4A4A4A] hover:text-[#43B97B]"
@@ -525,7 +525,7 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
 
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#EEEEEE] bg-white hover:bg-gray-50 transition-colors group/restart text-red-500/80 hover:text-red-600 shadow-none">
+                                        <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#EEEEEE] bg-white hover:bg-gray-50 transition-colors group/restart text-red-500/80 hover:text-red-600">
                                             <span className="text-[12px] font-medium">Restart</span>
                                             <ArrowPathIcon className="size-3 text-red-400 group-hover/restart:text-red-500" />
                                         </button>

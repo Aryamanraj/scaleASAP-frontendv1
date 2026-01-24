@@ -61,6 +61,7 @@ export function CampaignsList({
                     </p>
                     <Button
                         variant="outline"
+                        onClick={onNewCampaign}
                         className="mt-4 bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
                     >
                         New Campaign
@@ -81,6 +82,7 @@ export function CampaignsList({
                 {!isDiscoveryOpen && (
                     <Button
                         variant="outline"
+                        onClick={onNewCampaign}
                         className="bg-white border-[#EEEEEE] hover:bg-gray-50 text-[#333333] font-medium"
                     >
                         New Campaign

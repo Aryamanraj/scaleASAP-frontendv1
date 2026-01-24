@@ -7,7 +7,10 @@ import {
     XMarkIcon,
     SparklesIcon,
     ArrowPathIcon,
-    RocketLaunchIcon
+    RocketLaunchIcon,
+    ExclamationTriangleIcon,
+    BoltIcon,
+    ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -95,7 +98,7 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
     return (
         <div
             className={cn(
-                "bg-white rounded-2xl border border-[#EEEEEE] shadow-sm transition-all duration-500 ease-in-out flex flex-col overflow-hidden h-full",
+                "bg-white rounded-2xl border border-[#EEEEEE] transition-all duration-500 ease-in-out flex flex-col overflow-hidden h-full",
                 isOpen ? "w-[480px] opacity-100" : "w-0 opacity-0 border-none"
             )}
         >
@@ -106,39 +109,54 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
                 </div>
                 <button
                     onClick={onClose}
-                    className="size-8 flex items-center justify-center border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
                 >
-                    <XMarkIcon className="size-4 text-gray-400" />
+                    <XMarkIcon className="size-4 text-[#333333]" />
                 </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                {/* Core Strategy */}
-                <div className="space-y-6">
-                    <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <SparklesIcon className="size-12 text-[#43B97B]" />
+                {/* Core Strategy Cards */}
+                <div className="space-y-4">
+                    <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 hover:border-[#43B97B] transition-all group flex flex-col cursor-default">
+                        <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-10 w-10 flex items-center justify-center shrink-0 mb-4">
+                            <SparklesIcon className="h-6 w-6 text-gray-500 group-hover:text-[#43B97B] transition-colors" />
                         </div>
-                        <h3 className="text-xs font-bold text-[#43B97B] uppercase tracking-wider mb-3">Growth Pattern</h3>
-                        <p className="text-[15px] text-[#333333] leading-relaxed font-semibold italic">
+                        <h3 className="text-xl font-bold text-[#4A4A4A]">Growth Pattern</h3>
+                        <p className="text-[#4A4A4A] mt-2 font-medium leading-relaxed italic">
                             {displayExp.pattern}
                         </p>
+                        <div className="h-px w-full bg-gray-50 mt-4" />
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
-                        <div className="bg-gray-50/50 border border-[#EEEEEE] rounded-2xl p-5 space-y-2">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Target Pain Point</h4>
-                            <p className="text-[15px] text-[#333333] leading-relaxed font-medium">{displayExp.pain}</p>
+                        <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 hover:border-[#43B97B] transition-all group flex flex-col cursor-default">
+                            <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-10 w-10 flex items-center justify-center shrink-0 mb-4">
+                                <ExclamationTriangleIcon className="h-6 w-6 text-gray-500 group-hover:text-[#43B97B] transition-colors" />
+                            </div>
+                            <h3 className="text-xl font-bold text-[#4A4A4A]">Target Pain Point</h3>
+                            <p className="text-[#4A4A4A] mt-2 font-medium leading-relaxed">
+                                {displayExp.pain}
+                            </p>
                         </div>
-                        <div className="bg-gray-50/50 border border-[#EEEEEE] rounded-2xl p-5 space-y-2">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Trigger Mechanism</h4>
-                            <p className="text-[15px] text-[#333333] leading-relaxed font-medium">{displayExp.trigger}</p>
+
+                        <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 hover:border-[#43B97B] transition-all group flex flex-col cursor-default">
+                            <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[#43B97B]/10 transition-colors h-10 w-10 flex items-center justify-center shrink-0 mb-4">
+                                <BoltIcon className="h-6 w-6 text-gray-500 group-hover:text-[#43B97B] transition-colors" />
+                            </div>
+                            <h3 className="text-xl font-bold text-[#4A4A4A]">Trigger Mechanism</h3>
+                            <p className="text-[#4A4A4A] mt-2 font-medium leading-relaxed">
+                                {displayExp.trigger}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 shadow-sm border-l-4 border-l-[#43B97B]">
-                        <h4 className="text-xs font-bold text-[#43B97B] uppercase tracking-wider mb-3">Outreach Angle</h4>
-                        <p className="text-[15px] text-[#333333] leading-relaxed font-semibold italic">
+                    <div className="bg-white border border-[#EEEEEE] rounded-2xl p-6 hover:border-[#43B97B] transition-all group flex flex-col border-l-4 border-l-[#43B97B] cursor-default">
+                        <div className="p-2 bg-[#43B97B]/10 rounded-lg h-10 w-10 flex items-center justify-center shrink-0 mb-4">
+                            <ChatBubbleLeftRightIcon className="h-6 w-6 text-[#43B97B]" />
+                        </div>
+                        <h3 className="text-xl font-bold text-[#4A4A4A]">Outreach Angle</h3>
+                        <p className="text-[#4A4A4A] mt-2 font-bold leading-relaxed italic text-lg">
                             &ldquo;{displayExp.outreach_angle}&rdquo;
                         </p>
                     </div>
@@ -192,7 +210,7 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
                 <Button
                     onClick={handleCreateCampaign}
                     disabled={isCreatingCampaign}
-                    className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white font-semibold h-10 rounded-md shadow-sm shadow-[#43B97B]/10 flex items-center justify-center gap-2 group transition-all active:scale-[0.98]"
+                    className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white font-medium h-10 rounded-md flex items-center justify-center gap-2 group transition-all"
                 >
                     {isCreatingCampaign ? (
                         <ArrowPathIcon className="size-5 animate-spin" />
