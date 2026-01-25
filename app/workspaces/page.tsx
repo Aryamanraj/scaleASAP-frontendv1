@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 import { ScaleLogo } from "@/components/scale-logo"
 import { createWorkspace, deleteWorkspace, getWorkspaces, Workspace } from "@/app/actions/workspaces"
+import { logout } from "@/app/actions/auth"
 import { toast } from "sonner"
 
 export default function WorkspacesPage() {
@@ -196,7 +197,12 @@ export default function WorkspacesPage() {
                 <div className="flex gap-4">
                     <a href="#" className="hover:text-[#43B97B] transition-colors">Privacy</a>
                     <a href="#" className="hover:text-[#43B97B] transition-colors">Terms & Condition</a>
-                    <button onClick={() => router.push("/")} className="flex items-center gap-1 text-red-500 hover:text-red-500/80 transition-colors cursor-pointer">
+                    <button
+                        onClick={async () => {
+                            await logout()
+                        }}
+                        className="flex items-center gap-1 text-red-500 hover:text-red-500/80 transition-colors cursor-pointer"
+                    >
                         Log Out <ArrowLeftStartOnRectangleIcon className="h-3 w-3" />
                     </button>
                 </div>
