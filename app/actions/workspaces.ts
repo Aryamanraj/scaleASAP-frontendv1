@@ -14,6 +14,35 @@ export interface Workspace {
     discovery_chat_history?: Array<{ role: 'user' | 'assistant', content: string }>
 }
 
+function filterSensitiveChatHistory(history: Array<{ role: string, content: string }> | undefined) {
+    if (!history) return undefined
+
+    return history.map(msg => {
+        // Filter out JSON output blocks
+        if (msg.content.includes('--- JSON_OUTPUT_START ---')) {
+            // Keep only the text part before the JSON block if it exists
+            const parts = msg.content.split('--- JSON_OUTPUT_START ---')
+            return { ...msg, content: parts[0].trim() }
+        }
+
+        // Filter out raw JSON objects that might be exposed (heuristic: starts with { and likely ends with })
+        // We only want to filter large automated JSON dumps, not necessarily small inline code snippets if user typed them.
+        if (msg.content.trim().startsWith('{') && msg.content.trim().endsWith('}')) {
+            try {
+                JSON.parse(msg.content);
+                // If it parses as JSON, it's likely a data dump we want to hide if it's from system/assistant
+                if (msg.role === 'assistant') {
+                    return { ...msg, content: '' } // Or completely filter out? For now empty content.
+                }
+            } catch (e) {
+                // Not valid JSON, keep it
+            }
+        }
+
+        return msg
+    }).filter(msg => msg.content.length > 0) // Remove empty messages resulting from filtering
+}
+
 export async function createWorkspace(data: { name?: string }) {
     try {
         const supabase = await createClient()
@@ -72,7 +101,14 @@ export async function getWorkspaces() {
         }
 
         console.log(`getWorkspaces: Found ${workspaces?.length} workspaces for user ${user.id}`)
-        return workspaces as Workspace[]
+
+        // Filter chat history for all workspaces
+        const safeWorkspaces = workspaces?.map(ws => ({
+            ...ws,
+            discovery_chat_history: filterSensitiveChatHistory(ws.discovery_chat_history)
+        }))
+
+        return safeWorkspaces as Workspace[]
     } catch (error) {
         console.error('Unexpected error in getWorkspaces:', error)
         return []
@@ -146,7 +182,13 @@ export async function getWorkspaceById(id: string) {
             return null
         }
 
-        return workspace as Workspace
+        // Filter sensitive data from chat history
+        const safeWorkspace = {
+            ...workspace,
+            discovery_chat_history: filterSensitiveChatHistory(workspace.discovery_chat_history)
+        }
+
+        return safeWorkspace as Workspace
     } catch (error) {
         console.error('Unexpected error in getWorkspaceById:', error)
         return null

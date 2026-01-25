@@ -169,22 +169,19 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
     const scrollRef = useRef<HTMLDivElement>(null)
     const hasInitialized = useRef(false)
 
-    // Check if experiments are present in the last message
+    // Check for experiments signal in the last message
     useEffect(() => {
         if (messages.length > 0) {
             const lastMsg = messages[messages.length - 1]
             if (lastMsg.role === 'assistant') {
-                const { icpData } = parseContent(lastMsg.content)
-                if (icpData) {
+                // If we receive the special signal, we know experiments are ready
+                if (lastMsg.content.includes('[[EXPERIMENTS_CREATED]]')) {
                     setShowExperiments(true)
-                    // Save chat history when experiments are generated
-                    saveDiscoveryChatHistory(workspaceId, messages).catch(err =>
-                        console.error("Failed to save discovery chat history:", err)
-                    )
+                    onExperimentsCreated?.()
                 }
             }
         }
-    }, [messages, workspaceId])
+    }, [messages, onExperimentsCreated])
 
     const handleSend = useCallback(async (isInitial = false, overrideMessages?: Message[]) => {
         if (!isInitial && (!input.trim() || isLoading)) return
@@ -239,15 +236,23 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
 
                 // Extract placeholder if present [[PLACEHOLDER: ...]]
                 let cleanContent = assistantContent
-                const placeholderMatch = assistantContent.match(/\[\[PLACEHOLDER:\s*(.*?)\]\]/i)
+
+                // Remove experiments signal from display
+                cleanContent = cleanContent.replace('[[EXPERIMENTS_CREATED]]', '').trim()
+
+                const placeholderMatch = cleanContent.match(/\[\[PLACEHOLDER:\s*(.*?)\]\]/i)
 
                 if (placeholderMatch) {
-                    cleanContent = assistantContent.replace(/\[\[PLACEHOLDER:\s*.*?\]\]/i, '').trim()
+                    cleanContent = cleanContent.replace(/\[\[PLACEHOLDER:\s*.*?\]\]/i, '').trim()
                     const newP = placeholderMatch[1].replace(/[\[\]]/g, '').trim()
                     if (newP) setCurrentPlaceholder(newP)
-                } else if (assistantContent.includes('[[')) {
-                    const partialIndex = assistantContent.lastIndexOf('[[')
-                    cleanContent = assistantContent.slice(0, partialIndex).trim()
+                } else if (cleanContent.includes('[[')) {
+                    // Only hide if it looks like a placeholder start, careful not to hide normal text brackets
+                    // But [[EXPERIMENTS_CREATED]] is already gone.
+                    const partialIndex = cleanContent.lastIndexOf('[[')
+                    if (partialIndex !== -1 && partialIndex > cleanContent.length - 20) { // Heuristic: bracket at end
+                        cleanContent = cleanContent.slice(0, partialIndex).trim()
+                    }
                 }
 
                 setMessages(prev => {
@@ -411,16 +416,12 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                                 m.content
                                             ) : (
                                                 <>
-                                                    <TypewriterText content={text} />
-                                                    {/* Accordion renders only if valid data parsed */}
-                                                    {icpData && (
-                                                        <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                                                            <ICPAccordion
-                                                                icps={icpData.icps}
-                                                                strategicInsight={icpData.strategic_insight}
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    <TypewriterText content={text.replace('[[EXPERIMENTS_CREATED]]', '')} />
+                                                    {/* Accordion is now rendered from stored experiments via parent, 
+                                                        or we could fetch them here. For now, we rely on the parent updating the view 
+                                                        via onExperimentsCreated which switches tabs. 
+                                                        If we want to show them inline, we would need to fetch them.
+                                                    */}
                                                 </>
                                             )}
                                         </div>
@@ -475,26 +476,10 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                                     onClick={async () => {
                                                         if (!showExperiments || isCreatingExperiments) return
 
-                                                        setIsCreatingExperiments(true)
-                                                        try {
-                                                            // Extract ICP data from last message
-                                                            const lastMsg = messages[messages.length - 1]
-                                                            if (lastMsg.role === 'assistant') {
-                                                                const { icpData } = parseContent(lastMsg.content)
-                                                                if (icpData && icpData.icps) {
-                                                                    // Create experiments in database
-                                                                    await createExperiments(workspaceId, icpData.icps as ICPData[])
-                                                                    // Notify parent to transition UI
-                                                                    onExperimentsCreated?.()
-                                                                }
-                                                            }
-                                                        } catch (error) {
-                                                            console.error('Failed to create experiments:', error)
-                                                        } finally {
-                                                            setIsCreatingExperiments(false)
-                                                        }
+                                                        // Just switch tab as experiments are already created server-side!
+                                                        onExperimentsCreated?.()
                                                     }}
-                                                    disabled={!showExperiments || isCreatingExperiments}
+                                                    disabled={!showExperiments}
                                                     variant="outline"
                                                     className={cn(
                                                         "flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-lg transition-colors border bg-white hover:bg-gray-50 group/run",
@@ -505,7 +490,7 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                                                     )}
                                                 >
                                                     <span className="text-[12px] font-medium">
-                                                        {isCreatingExperiments ? 'Creating...' : 'Run experiments'}
+                                                        View Experiments
                                                     </span>
                                                     {isCreatingExperiments ? (
                                                         <ArrowPathIcon className="size-3 animate-spin text-[#4A4A4A]" />
