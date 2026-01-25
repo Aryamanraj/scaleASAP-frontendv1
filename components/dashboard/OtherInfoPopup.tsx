@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { Button } from '@/components/ui/button'
 import { OTHER_INFO_STEPS, OnboardingData } from '@/lib/onboarding-data'
 import { FoundingStory } from '../onboarding/steps/FoundingStory'
@@ -57,6 +58,9 @@ export function OtherInfoPopup({ workspaceId, data, updateData, isOpen, onClose 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent showCloseButton={false} className="sm:max-w-[1050px] w-[1050px] h-[750px] p-0 overflow-hidden bg-[#F9FAFB] border-none shadow-2xl rounded-3xl flex flex-row gap-2 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <VisuallyHidden>
+                    <DialogTitle>Complete Deep Profile</DialogTitle>
+                </VisuallyHidden>
 
                 {/* Left Sidebar - Floating Card Style */}
                 <aside className="w-[300px] bg-white border border-[#EEEEEE] rounded-2xl shadow-sm flex flex-col shrink-0 overflow-hidden m-2">
