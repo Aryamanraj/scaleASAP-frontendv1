@@ -39,6 +39,28 @@ export default function RootLayout({
       >
         {children}
         <Toaster />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+          // Security Guard: Monitor for destructive commands in inputs
+          document.addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+              const value = e.target.value;
+              const destructivePatterns = [/rm\\s+-rf\\b/i, /mkfs\\b/i];
+              if (destructivePatterns.some(p => p.test(value))) {
+                console.warn('%c[Security Alert] Destructive command pattern detected!', 'color: red; font-weight: bold; font-size: 14px;');
+                // Optional: alert('Destructive commands are blocked in this application for security reasons.');
+              }
+            }
+          });
+          
+          // Self-protection from malicious console copy-pasting
+          if (typeof window !== 'undefined') {
+            const warningTitle = 'STOP!';
+            const warningText = 'This is a browser feature intended for developers. If someone told you to copy-paste something here to "fix" something or "get a feature", it is a scam and will give them access to your account.';
+            console.log('%c' + warningTitle, 'color: red; font-size: 50px; font-weight: bold; -webkit-text-stroke: 1px black;');
+            console.log('%c' + warningText, 'font-size: 18px;');
+          }
+        `}} />
       </body>
     </html>
   );

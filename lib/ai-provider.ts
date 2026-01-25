@@ -25,6 +25,27 @@ export interface ChatCompletionResult {
     provider: 'openai' | 'gemini';
 }
 
+function sanitizeContent(content: string): string {
+    const destructivePatterns = [
+        /rm\s+-rf\b/i,
+        /rm\s+-f\s+-r\b/i,
+        /rm\s+-r\s+-f\b/i,
+        /mkfs\b/i,
+        /dd\s+if=\/dev\/zero\b/i,
+        />\s*\/dev\/sda\b/i,
+        /shred\b/i
+    ];
+
+    let sanitized = content;
+    for (const pattern of destructivePatterns) {
+        if (pattern.test(sanitized)) {
+            console.warn('[Security] Destructive command detected and blocked:', pattern);
+            sanitized = sanitized.replace(pattern, '[DESTRUCTIVE COMMAND BLOCKED]');
+        }
+    }
+    return sanitized;
+}
+
 /**
  * Attempts to call OpenAI first. If rate limited (429), falls back to Gemini.
  */
@@ -40,7 +61,7 @@ export async function chatCompletion(options: ChatCompletionOptions): Promise<Ch
         });
 
         const content = response.choices[0]?.message?.content || '';
-        return { content, provider: 'openai' };
+        return { content: sanitizeContent(content), provider: 'openai' };
 
     } catch (error: unknown) {
         const err = error as { status?: number; code?: string; message?: string };
@@ -77,7 +98,7 @@ export async function chatCompletionStream(options: ChatCompletionOptions): Prom
             stream: true,
         });
 
-        const stream = new ReadableStream({
+        const originalStream = new ReadableStream({
             async start(controller) {
                 try {
                     for await (const chunk of response) {
@@ -91,7 +112,30 @@ export async function chatCompletionStream(options: ChatCompletionOptions): Prom
             },
         });
 
-        return { stream, provider: 'openai' };
+        // Add safety transform to stream
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const transformStream = new TransformStream({
+            transform(chunk, controller) {
+                const text = decoder.decode(chunk, { stream: true });
+                buffer += text;
+
+                // If buffer contains destructive command, block everything from here
+                const destructivePatterns = [/rm\s+-rf\b/i, /mkfs\b/i, /dd\s+if=\/dev\/zero\b/i];
+                if (destructivePatterns.some(p => p.test(buffer))) {
+                    console.error('[Security] Destructive command detected in AI stream! Blocking further output.');
+                    controller.enqueue(encoder.encode('\n\n[DESTRUCTIVE COMMAND BLOCKED]'));
+                    controller.terminate(); // Terminate the stream for safety
+                    return;
+                }
+
+                controller.enqueue(chunk);
+            }
+        });
+
+        return { stream: originalStream.pipeThrough(transformStream), provider: 'openai' };
 
     } catch (error: unknown) {
         const err = error as { status?: number; code?: string; message?: string };
@@ -186,7 +230,7 @@ async function geminiChatCompletion(messages: ChatMessage[], temperature: number
     const result = await chat.sendMessage(lastUserMessage);
     const content = result.response.text();
 
-    return { content, provider: 'gemini' };
+    return { content: sanitizeContent(content), provider: 'gemini' };
 }
 
 /**
@@ -216,7 +260,7 @@ async function geminiChatCompletionStream(messages: ChatMessage[], temperature: 
 
     const result = await chat.sendMessageStream(lastUserMessage);
 
-    const stream = new ReadableStream({
+    const originalStream = new ReadableStream({
         async start(controller) {
             try {
                 for await (const chunk of result.stream) {
@@ -230,5 +274,27 @@ async function geminiChatCompletionStream(messages: ChatMessage[], temperature: 
         },
     });
 
-    return { stream, provider: 'gemini' };
+    // Add safety transform to Gemini stream
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const transformStream = new TransformStream({
+        transform(chunk, controller) {
+            const text = decoder.decode(chunk, { stream: true });
+            buffer += text;
+
+            const destructivePatterns = [/rm\s+-rf\b/i, /mkfs\b/i, /dd\s+if=\/dev\/zero\b/i];
+            if (destructivePatterns.some(p => p.test(buffer))) {
+                console.error('[Security] Destructive command detected in AI stream (Gemini)!');
+                controller.enqueue(encoder.encode('\n\n[DESTRUCTIVE COMMAND BLOCKED]'));
+                controller.terminate();
+                return;
+            }
+
+            controller.enqueue(chunk);
+        }
+    });
+
+    return { stream: originalStream.pipeThrough(transformStream), provider: 'gemini' };
 }
