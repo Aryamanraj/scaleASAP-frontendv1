@@ -46,7 +46,7 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
         const payload = {
             workspace_id: workspaceId,
             updated_at: new Date().toISOString(),
-            data: data
+            data: { ...data, testMode }
         }
 
         let error;

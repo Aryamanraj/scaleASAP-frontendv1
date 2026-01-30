@@ -125,6 +125,7 @@ interface DiscoveryChatProps {
     isFollowUp?: boolean
     previousExperiments?: Experiment[]
     onBack?: () => void
+    isMainView?: boolean
 }
 
 // Helper functions for experiment summary
@@ -156,7 +157,16 @@ const formatStatus = (status: string) => {
     }
 }
 
-export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, initialChatHistory, isFollowUp = false, previousExperiments = [], onBack }: DiscoveryChatProps) {
+export function DiscoveryChat({
+    workspaceId,
+    userName,
+    onExperimentsCreated,
+    initialChatHistory,
+    isFollowUp = false,
+    previousExperiments = [],
+    onBack,
+    isMainView = false
+}: DiscoveryChatProps) {
     const [messages, setMessages] = useState<Message[]>(() => {
         if (isFollowUp) return []
         return initialChatHistory || []
@@ -356,32 +366,37 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             ` }} />
 
-            {/* Header for Side Curtain */}
-            <div className="p-6 pb-2 border-b border-[#EEEEEE] flex items-center justify-between bg-white z-10">
-                <div className="flex flex-col">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ICP Discovery</span>
-                    <h2 className="text-lg font-bold text-[#333333] tracking-tight">
-                        {isFollowUp ? 'Expand Strategy' : 'Strategy Chat'}
-                    </h2>
+            {/* Header for Side Curtain - Hidden in main view */}
+            {!isMainView && (
+                <div className="p-6 pb-2 border-b border-[#EEEEEE] flex items-center justify-between bg-white z-10">
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">ICP Discovery</span>
+                        <h2 className="text-lg font-bold text-[#333333] tracking-tight">
+                            {isFollowUp ? 'Expand Strategy' : 'Strategy Chat'}
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {onBack && (
+                            <button
+                                onClick={onBack}
+                                className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
+                            >
+                                <XMarkIcon className="size-4 text-[#333333]" />
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {onBack && (
-                        <button
-                            onClick={onBack}
-                            className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
-                        >
-                            <XMarkIcon className="size-4 text-[#333333]" />
-                        </button>
-                    )}
-                </div>
-            </div>
+            )}
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-6 pt-6 pb-40 no-scrollbar"
+                className={cn(
+                    "flex-1 overflow-y-auto px-6 no-scrollbar",
+                    isMainView ? "pt-12 pb-44" : "pt-6 pb-40"
+                )}
                 ref={scrollRef}
             >
-                <div className="w-full space-y-8 transition-all">
+                <div className="max-w-[600px] mx-auto w-full space-y-8 transition-all">
                     {messages.map((m, i) => {
                         const { text, icpData } = m.role === 'assistant' ? parseContent(m.content) : { text: m.content, icpData: null }
                         return (
@@ -451,8 +466,8 @@ export function DiscoveryChat({ workspaceId, userName, onExperimentsCreated, ini
             </div>
 
             {/* Sticky Bottom Input Bar (Fixed at the bottom of the curtain) */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none backdrop-blur-[2px] border-t border-gray-50/50">
-                <div className="w-full pointer-events-auto">
+            <div className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-8 bg-gradient-to-t from-white via-white to-white/0 pointer-events-none backdrop-blur-[2px]">
+                <div className="max-w-[600px] mx-auto w-full pointer-events-auto">
                     <div className="bg-white border border-[#EEEEEE] rounded-[22px] transition-all duration-200 focus-within:border-[#43B97B] focus-within:ring-1 focus-within:ring-[#43B97B]/10 overflow-hidden flex flex-col min-h-[100px]">
                         <textarea
                             placeholder={currentPlaceholder}

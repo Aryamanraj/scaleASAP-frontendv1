@@ -189,6 +189,7 @@ export type OnboardingData = {
     website_scrape?: string;
     favicon_url?: string;
     worldview_full?: string;
+    testMode?: boolean;
 };
 
 export const INITIAL_DATA: OnboardingData = {
@@ -265,4 +266,5 @@ export const INITIAL_DATA: OnboardingData = {
     companyDescription: "",
     favicon_url: "",
     worldview_full: "",
+    testMode: false,
 };

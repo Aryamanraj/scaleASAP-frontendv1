@@ -14,7 +14,7 @@ import { ExperimentsList } from '@/components/dashboard/ExperimentsList'
 import { getExperiments, Experiment } from '@/app/actions/workspaces'
 import { ExperimentDetailCurtain } from '@/components/dashboard/ExperimentDetailCurtain'
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup'
-import { saveDiscoveryFeedback } from '@/app/actions/workspaces'
+import { saveDiscoveryFeedback, generateSuggestedExperiments } from '@/app/actions/workspaces'
 import { getCampaigns, Campaign, createCampaign } from '@/app/actions/campaigns'
 import { CampaignsList } from '@/components/dashboard/CampaignsList'
 import { CampaignDetailCurtain } from '@/components/dashboard/CampaignDetailCurtain'
@@ -45,6 +45,7 @@ export default function DashboardPage() {
     const [showNewCampaignCurtain, setShowNewCampaignCurtain] = useState(false)
     const [allLeads, setAllLeads] = useState<Lead[]>([])
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+    const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false)
 
     useEffect(() => {
         const load = async () => {
@@ -136,6 +137,22 @@ export default function DashboardPage() {
         }
     }
 
+    const handleSuggestedExperiments = async () => {
+        try {
+            setIsGeneratingSuggestions(true)
+            await generateSuggestedExperiments(workspaceId)
+            // Reload experiments
+            const exps = await getExperiments(workspaceId)
+            setExperiments(exps)
+            // Switch to experiments tab
+            handleTabChange('experiments')
+        } catch (error) {
+            console.error('Failed to generate suggested experiments:', error)
+        } finally {
+            setIsGeneratingSuggestions(false)
+        }
+    }
+
     // Check if we have discovery chat history
     const hasChatHistory = workspace?.discovery_chat_history && workspace.discovery_chat_history.length > 0
 
@@ -158,20 +175,33 @@ export default function DashboardPage() {
             <div className="w-2 shrink-0" />
 
             <main className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#EEEEEE] shadow-sm relative">
-                <div className="max-w-7xl mx-auto h-full p-8">
-                    {currentTab === 'overview' && (
-                        <Overview
-                            isEmpty={experiments.length === 0}
-                            userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
-                            onStartDiscovery={() => {
-                                setCurrentTab('experiments')
-                                setShowDiscoveryChat(true)
-                            }}
-                            experiments={experiments}
-                        />
-                    )}
-                    {currentTab === 'experiments' && (
-                        experiments.length > 0 ? (
+                {/* Discovery Chat 0-state: Full screen coverage */}
+                {currentTab === 'experiments' && experiments.length === 0 ? (
+                    <DiscoveryChat
+                        workspaceId={workspaceId}
+                        userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
+                        onExperimentsCreated={handleExperimentsCreated}
+                        isFollowUp={false}
+                        previousExperiments={[]}
+                        isMainView={true}
+                        initialChatHistory={workspace.discovery_chat_history}
+                    />
+                ) : (
+                    <div className="max-w-7xl mx-auto h-full p-8 px-8">
+                        {currentTab === 'overview' && (
+                            <Overview
+                                isEmpty={experiments.length === 0}
+                                userName={userEmail?.split('@')[0].split(/[._-]/).map(s => s[0].toUpperCase() + s.slice(1)).join(' ') || 'there'}
+                                onStartDiscovery={() => {
+                                    setCurrentTab('experiments')
+                                    setShowDiscoveryChat(true)
+                                }}
+                                onSuggestedExperiments={handleSuggestedExperiments}
+                                isLoading={isGeneratingSuggestions}
+                                experiments={experiments}
+                            />
+                        )}
+                        {currentTab === 'experiments' && experiments.length > 0 && (
                             <ExperimentsList
                                 experiments={experiments}
                                 onNewExperiment={() => {
@@ -190,67 +220,49 @@ export default function DashboardPage() {
                                 hasOngoingChat={hasChatHistory}
                                 isDiscoveryOpen={showDiscoveryChat}
                             />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
-                                <div className="size-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                    <span className="text-2xl">🧪</span>
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-[#333333]">Ready to Scale?</h2>
-                                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
-                                        Start a discovery chat to generate AI-powered outreach experiments.
-                                    </p>
-                                    <Button
-                                        onClick={() => setShowDiscoveryChat(true)}
-                                        className="bg-[#43B97B] hover:bg-[#3CA66F] text-white"
-                                    >
-                                        Start Discovery
-                                    </Button>
-                                </div>
+                        )}
+                        {currentTab === 'campaigns' && (
+                            <div className="flex flex-col h-full">
+                                <CampaignsList
+                                    campaigns={campaigns}
+                                    experiments={experiments}
+                                    onCampaignSelect={(c: Campaign) => {
+                                        setSelectedCampaign(c)
+                                        setShowNewCampaignCurtain(false)
+                                        setSelectedExperiment(null)
+                                        setShowDiscoveryChat(false)
+                                    }}
+                                    selectedId={selectedCampaign?.id}
+                                    onNewCampaign={() => {
+                                        setShowNewCampaignCurtain(true)
+                                        setSelectedCampaign(null)
+                                        setSelectedExperiment(null)
+                                        setShowDiscoveryChat(false)
+                                    }}
+                                    hasOngoingChat={hasChatHistory}
+                                    isDiscoveryOpen={showDiscoveryChat}
+                                />
                             </div>
-                        )
-                    )}
-                    {currentTab === 'campaigns' && (
-                        <div className="flex flex-col h-full">
-                            <CampaignsList
+                        )}
+                        {currentTab === 'library' && (
+                            <LeadsList
+                                leads={allLeads}
                                 campaigns={campaigns}
-                                experiments={experiments}
-                                onCampaignSelect={(c: Campaign) => {
-                                    setSelectedCampaign(c)
-                                    setShowNewCampaignCurtain(false)
-                                    setSelectedExperiment(null)
-                                    setShowDiscoveryChat(false)
-                                }}
-                                selectedId={selectedCampaign?.id}
-                                onNewCampaign={() => {
-                                    setShowNewCampaignCurtain(true)
-                                    setSelectedCampaign(null)
-                                    setSelectedExperiment(null)
-                                    setShowDiscoveryChat(false)
-                                }}
-                                hasOngoingChat={hasChatHistory}
-                                isDiscoveryOpen={showDiscoveryChat}
+                                onLeadSelect={(lead) => setSelectedLead(lead)}
+                                selectedId={selectedLead?.id}
                             />
-                        </div>
-                    )}
-                    {currentTab === 'library' && (
-                        <LeadsList
-                            leads={allLeads}
-                            campaigns={campaigns}
-                            onLeadSelect={(lead) => setSelectedLead(lead)}
-                            selectedId={selectedLead?.id}
-                        />
-                    )}
-                    {currentTab === 'settings' && (
-                        <Settings
-                            workspace={workspace}
-                            userEmail={userEmail || 'Guest'}
-                        />
-                    )}
-                    {currentTab === 'help' && (
-                        <HelpSupport />
-                    )}
-                </div>
+                        )}
+                        {currentTab === 'settings' && (
+                            <Settings
+                                workspace={workspace}
+                                userEmail={userEmail || 'Guest'}
+                            />
+                        )}
+                        {currentTab === 'help' && (
+                            <HelpSupport />
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Curtains Container - Unified sliding orchestration */}
@@ -271,7 +283,7 @@ export default function DashboardPage() {
                 {/* Discovery Curtain */}
                 <div className={cn(
                     "bg-white rounded-2xl border border-[#EEEEEE] shadow-sm transition-all duration-500 ease-in-out flex flex-col overflow-hidden h-full",
-                    (showDiscoveryChat && (currentTab === 'experiments' || currentTab === 'campaigns')) ? "w-[480px] opacity-100" : "w-0 opacity-0 border-none pointer-events-none"
+                    (showDiscoveryChat && experiments.length > 0 && (currentTab === 'experiments' || currentTab === 'campaigns')) ? "w-[480px] opacity-100" : "w-0 opacity-0 border-none pointer-events-none"
                 )}>
                     <DiscoveryChat
                         key={experiments.length > 0 ? 'followup' : 'initial'}
@@ -290,6 +302,7 @@ export default function DashboardPage() {
                     isOpen={!!selectedExperiment && currentTab === 'experiments'}
                     onClose={() => setSelectedExperiment(null)}
                     onCreateCampaign={handleCreateCampaign}
+                    hasCampaignStarted={campaigns.some(c => c.experiment_id === selectedExperiment?.id)}
                 />
 
                 <CampaignDetailCurtain

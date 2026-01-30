@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { chatCompletion } from '@/lib/ai-provider'
 
 export interface Workspace {
     id: string
@@ -260,7 +261,7 @@ export interface Experiment {
         year_founded_end?: string
     }
     outreach_angle: string
-    status: 'pending' | 'creating_hypotheses' | 'finding_leads' | 'prioritizing_leads' | 'warmup_initiated' | 'complete' | 'completed' | 'failed'
+    status: 'pending' | 'creating_hypotheses' | 'finding_leads' | 'prioritizing_leads' | 'warmup_initiated' | 'complete' | 'completed' | 'failed' | 'suggested'
     leads_found: number
     leads_warming: number
     meetings_booked: number
@@ -357,6 +358,111 @@ export async function createExperiments(workspaceId: string, icps: ICPData[]) {
         return experiments as Experiment[]
     } catch (error) {
         console.error('Unexpected error in createExperiments:', error)
+        throw error
+    }
+}
+
+export async function generateSuggestedExperiments(workspaceId: string) {
+    try {
+        const { getOnboardingData } = await import('@/app/actions/onboarding')
+        const context = await getOnboardingData(workspaceId)
+
+        if (!context) {
+            throw new Error('Workspace data not found')
+        }
+
+        const systemPrompt = `You are an expert growth strategist. Based on the onboarding data provided, generate 2 high-leverage experiments to find the Ideal Customer Profile (ICP).
+        
+        ONBOARDING DATA:
+        Company: ${context.companyName}
+        Website: ${context.website}
+        Target ICP (Fuzzy Idea): ${context.targetICP}
+        Goal: ${context.onboardingGoal}
+        Worldview: ${context.worldview_full}
+        
+        FORMAT REQUIREMENTS:
+        - Return the data in the mandatory JSON format.
+        - Wrap the JSON between --- JSON_OUTPUT_START --- and --- JSON_OUTPUT_END --- markers.
+        - You MUST generate exactly 2 experiments.
+        - The experiments should be pattern-based, not just industry-based.
+        - One should be a "bullseye" (most likely) and one should be "variable_a" (slight pivot).
+        
+        MANDATORY JSON STRUCTURE:
+        {
+          "icps": [
+            {
+              "name": "Bullseye: [Pattern Name]",
+              "pattern": "Description",
+              "industries": ["Ind 1"],
+              "pain": "Pain description",
+              "trigger": "Trigger description",
+              "wiza_filters": { ... },
+              "outreach_angle": "Angle",
+              "type": "bullseye"
+            },
+            {
+               "name": "Variable A: [Pattern Name]",
+               "type": "variable_a",
+               ...
+            }
+          ]
+        }
+        
+        Ensure headers and structure match the SECTION 10: OUTPUT FORMAT requirements of our system.`;
+
+        const { content } = await chatCompletion({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: 'Generate 2 suggested experiments now.' }
+            ],
+            temperature: 0.7
+        });
+
+        if (content.includes('--- JSON_OUTPUT_START ---')) {
+            const parts = content.split('--- JSON_OUTPUT_START ---')
+            const jsonPart = parts[1].split('--- JSON_OUTPUT_END ---')[0].trim()
+
+            // Extract JSON block if marked with markdown code fences
+            const cleanJson = jsonPart.replace(/```json\n|\n```/g, '').replace(/```/g, '')
+            const icpData = JSON.parse(cleanJson)
+
+            if (icpData && icpData.icps) {
+                const supabase = await createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) throw new Error('Unauthorized')
+
+                const experimentsToInsert = icpData.icps.map((icp: any) => ({
+                    workspace_id: workspaceId,
+                    name: icp.name,
+                    type: icp.type,
+                    pattern: icp.pattern,
+                    industries: icp.industries,
+                    pain: icp.pain,
+                    trigger: icp.trigger,
+                    wiza_filters: icp.wiza_filters,
+                    outreach_angle: icp.outreach_angle,
+                    status: 'suggested',
+                    leads_found: 0,
+                    leads_warming: 0,
+                    meetings_booked: 0
+                }))
+
+                const { data: experiments, error } = await supabase
+                    .from('experiments')
+                    .insert(experimentsToInsert)
+                    .select()
+
+                if (error) throw new Error(error.message)
+
+                revalidatePath(`/dashboard/${workspaceId}`)
+                return experiments as Experiment[]
+            }
+        }
+
+        throw new Error('Failed to generate experiments')
+    } catch (error) {
+        console.error('Error in generateSuggestedExperiments:', error)
         throw error
     }
 }

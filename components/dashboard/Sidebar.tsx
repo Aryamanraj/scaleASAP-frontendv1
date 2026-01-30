@@ -245,16 +245,6 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange, cla
                     <ArrowTopRightOnSquareIcon className="size-4 text-gray-400 group-hover:text-gray-600" />
                     <span>Exit Workspace</span>
                 </button>
-                <button
-                    onClick={async () => {
-                        const { logout } = await import('@/app/actions/auth')
-                        await logout()
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors group"
-                >
-                    <ArrowLeftStartOnRectangleIcon className="size-4 text-gray-400 group-hover:text-red-500" />
-                    <span>Log Out</span>
-                </button>
             </div>
         </aside>
     )

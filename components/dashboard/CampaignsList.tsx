@@ -119,15 +119,15 @@ export function CampaignsList({
 
             {/* Table */}
             <div className="bg-white border border-[#EEEEEE] rounded-lg overflow-hidden shadow-sm">
-                <table className="w-full">
+                <table className="w-full table-fixed">
                     <thead>
                         <tr className="border-b border-[#EEEEEE] bg-gray-50/50">
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">ID</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Name</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[80px]">ID</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[150px]">Name</th>
                             <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Experiment Strategy</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Leads</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Created</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[120px]">Status</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[80px]">Leads</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[150px]">Created</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -154,20 +154,20 @@ export function CampaignsList({
                                     </td>
 
                                     {/* Name */}
-                                    <td className="py-3.5 px-4">
-                                        <span className="text-sm font-semibold text-[#333333] group-hover:text-[#43B97B]">
+                                    <td className="py-3.5 px-4 overflow-hidden">
+                                        <span className="text-sm font-semibold text-[#333333] group-hover:text-[#43B97B] truncate block" title={campaign.name}>
                                             {campaign.name}
                                         </span>
                                     </td>
 
                                     {/* Linked Experiment */}
-                                    <td className="py-3.5 px-4 max-w-xs">
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="text-sm font-semibold text-[#333333] truncate">
+                                    <td className="py-3.5 px-4 min-w-0">
+                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                            <span className="text-sm font-semibold text-[#333333] truncate block" title={experiment ? experiment.name.replace(/^[^:]+:\s*/, '') : 'No strategy linked'}>
                                                 {experiment ? experiment.name.replace(/^[^:]+:\s*/, '') : 'No strategy linked'}
                                             </span>
                                             {experiment && (
-                                                <span className="text-xs text-gray-500 truncate">
+                                                <span className="text-xs text-gray-500 truncate block whitespace-nowrap" title={experiment.pattern}>
                                                     {experiment.pattern}
                                                 </span>
                                             )}
@@ -203,8 +203,8 @@ export function CampaignsList({
                                     {/* Created Date */}
                                     <td className="py-3.5 px-4">
                                         <div className="flex items-center gap-1.5">
-                                            <CalendarIcon className="size-3.5 text-gray-400" />
-                                            <span className="text-sm text-gray-600">
+                                            <CalendarIcon className="size-3.5 text-gray-400 shrink-0" />
+                                            <span className="text-sm text-gray-600 whitespace-nowrap">
                                                 {new Date(campaign.created_at).toLocaleDateString('en-US', {
                                                     month: 'short',
                                                     day: 'numeric',

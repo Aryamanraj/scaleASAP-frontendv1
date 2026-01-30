@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     trigger TEXT NOT NULL,
     wiza_filters JSONB NOT NULL,
     outreach_angle TEXT NOT NULL,
-    status TEXT DEFAULT 'creating_hypotheses' CHECK (status IN ('creating_hypotheses', 'finding_leads', 'prioritizing_leads', 'warmup_initiated', 'complete', 'failed')),
+    status TEXT DEFAULT 'creating_hypotheses' CHECK (status IN ('pending', 'creating_hypotheses', 'finding_leads', 'prioritizing_leads', 'warmup_initiated', 'complete', 'completed', 'failed', 'suggested')),
     leads_found INTEGER DEFAULT 0,
     leads_warming INTEGER DEFAULT 0,
     meetings_booked INTEGER DEFAULT 0,

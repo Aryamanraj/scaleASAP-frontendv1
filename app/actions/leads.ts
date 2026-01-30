@@ -19,6 +19,7 @@ export interface Signal {
 export interface Experience {
     company_name: string
     company_logo_url?: string
+    company_url?: string
     title: string
     time_from: string
     time_to: string
@@ -34,6 +35,21 @@ export interface LeadEnrichment {
         platform: string
         url: string
         icon?: string
+    }[]
+    skills?: string[]
+    certifications?: string[]
+    active_time?: {
+        peak_hour: string
+        timezone: string
+        days: string[]
+    }
+    education?: {
+        school_name: string
+        degree?: string
+        field?: string
+        time_from?: string
+        time_to?: string
+        logo_url?: string
     }[]
 }
 

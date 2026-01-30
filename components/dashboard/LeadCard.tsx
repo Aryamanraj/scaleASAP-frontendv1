@@ -36,20 +36,12 @@ export function LeadCard({ lead, onUpdateOutcome, onClick, onGenerateOutreach }:
                 "hover:ring-1 hover:ring-[#43B97B]/10 rounded-xl mx-2"
             )}
         >
-            {/* Left: Avatar */}
+            {/* Left: Initial */}
             <div className="relative shrink-0">
-                <div className="size-11 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gray-100 flex items-center justify-center">
-                    {lead.avatar_url ? (
-                        <img
-                            src={lead.avatar_url}
-                            alt={lead.full_name}
-                            className="size-full object-cover"
-                        />
-                    ) : (
-                        <span className="text-sm font-bold text-gray-400 uppercase">
-                            {lead.full_name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                    )}
+                <div className="size-11 rounded-xl border-2 border-white shadow-sm flex items-center justify-center bg-gray-50">
+                    <span className="text-base font-black text-[#43B97B] uppercase">
+                        {lead.full_name.charAt(0)}
+                    </span>
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 size-3.5 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-50">
                     <div className="size-2 rounded-full bg-[#43B97B]" title="High-intent Match" />
@@ -88,9 +80,12 @@ export function LeadCard({ lead, onUpdateOutcome, onClick, onGenerateOutreach }:
                 <div className="group-hover:hidden">
                     <Badge variant="secondary" className={cn(
                         "capitalize px-2 py-0.5 text-[10px] font-bold tracking-tight rounded-md border-none",
-                        lead.status === 'sent' ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-400"
+                        lead.status === 'sent' || lead.status === 'responded' ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-400"
                     )}>
-                        {lead.status}
+                        {lead.status === 'found' ? 'Found' :
+                            lead.status === 'enriched' ? 'Enriched' :
+                                lead.status === 'drafted' ? 'Drafted' :
+                                    lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                     </Badge>
                 </div>
 

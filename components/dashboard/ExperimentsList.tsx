@@ -34,6 +34,7 @@ export function ExperimentsList({
             case 'complete':
             case 'completed': return 'bg-green-50 text-green-700 border-green-200'
             case 'failed': return 'bg-red-50 text-red-700 border-red-200'
+            case 'suggested': return 'bg-blue-50 text-blue-700 border-blue-200'
             default: return 'bg-gray-50 text-gray-700 border-gray-200'
         }
     }
@@ -48,6 +49,7 @@ export function ExperimentsList({
             case 'complete':
             case 'completed': return 'Complete'
             case 'failed': return 'Failed'
+            case 'suggested': return 'Suggested'
             default: return status.charAt(0).toUpperCase() + status.slice(1)
         }
     }
@@ -130,15 +132,15 @@ export function ExperimentsList({
 
             {/* Table */}
             <div className="bg-white border border-[#EEEEEE] rounded-lg overflow-hidden">
-                <table className="w-full">
+                <table className="w-full table-fixed">
                     <thead>
                         <tr className="border-b border-[#EEEEEE] bg-gray-50/50">
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Experiment ID</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[100px]">ID</th>
                             <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Name</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Type</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Leads</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Created</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[110px]">Type</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[140px]">Status</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[80px]">Leads</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[150px]">Created</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -161,12 +163,12 @@ export function ExperimentsList({
                                 </td>
 
                                 {/* Name & Pattern */}
-                                <td className="py-3.5 px-4 max-w-xs">
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-sm font-semibold text-[#333333] truncate">
+                                <td className="py-3.5 px-4 overflow-hidden">
+                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                        <span className="text-sm font-semibold text-[#333333] truncate block" title={experiment.name.replace(/^[^:]+:\s*/, '')}>
                                             {experiment.name.replace(/^[^:]+:\s*/, '')}
                                         </span>
-                                        <span className="text-xs text-gray-500 truncate">
+                                        <span className="text-xs text-gray-500 truncate block whitespace-nowrap" title={experiment.pattern}>
                                             {experiment.pattern}
                                         </span>
                                     </div>
@@ -208,8 +210,8 @@ export function ExperimentsList({
                                 {/* Created Date */}
                                 <td className="py-3.5 px-4">
                                     <div className="flex items-center gap-1.5">
-                                        <CalendarIcon className="size-3.5 text-gray-400" />
-                                        <span className="text-sm text-gray-600">
+                                        <CalendarIcon className="size-3.5 text-gray-400 shrink-0" />
+                                        <span className="text-sm text-gray-600 whitespace-nowrap">
                                             {new Date(experiment.created_at).toLocaleDateString('en-US', {
                                                 month: 'short',
                                                 day: 'numeric',

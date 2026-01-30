@@ -10,12 +10,14 @@ interface OverviewProps {
     isEmpty?: boolean
     userName?: string
     onStartDiscovery?: () => void
+    onSuggestedExperiments?: () => void
+    isLoading?: boolean
     experiments?: Experiment[]
 }
 
-export function Overview({ isEmpty = false, userName, onStartDiscovery, experiments = [] }: OverviewProps) {
+export function Overview({ isEmpty = false, userName, onStartDiscovery, onSuggestedExperiments, isLoading, experiments = [] }: OverviewProps) {
     if (isEmpty) {
-        return <OverviewEmptyState userName={userName} onStartDiscovery={onStartDiscovery} />
+        return <OverviewEmptyState userName={userName} onStartDiscovery={onStartDiscovery} onSuggestedExperiments={onSuggestedExperiments} isLoading={isLoading} />
     }
 
     // Calculate stats from experiments data (same as ExperimentsList)

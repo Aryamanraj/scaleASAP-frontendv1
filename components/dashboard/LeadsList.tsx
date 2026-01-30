@@ -32,15 +32,18 @@ export function LeadsList({
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'responded': return 'bg-[#43B97B]/10 text-[#43B97B] border-[#43B97B]/20'
-            case 'sent': return 'bg-blue-50 text-blue-700 border-blue-200'
-            case 'drafted': return 'bg-amber-50 text-amber-700 border-amber-200'
-            case 'enriched': return 'bg-purple-50 text-purple-700 border-purple-200'
+            case 'sent': return 'bg-green-50 text-green-600 border-green-200'
+            case 'drafted': return 'bg-purple-50 text-purple-700 border-purple-200'
+            case 'enriched': return 'bg-blue-50 text-blue-700 border-blue-200'
             case 'found': return 'bg-gray-50 text-gray-700 border-gray-200'
             default: return 'bg-gray-50 text-gray-700 border-gray-200'
         }
     }
 
     const formatStatus = (status: string) => {
+        if (status === 'found') return 'Found'
+        if (status === 'enriched') return 'Enriched'
+        if (status === 'drafted') return 'Drafted'
         return status.charAt(0).toUpperCase() + status.slice(1)
     }
 
@@ -150,14 +153,10 @@ export function LeadsList({
                                         {/* Lead Name */}
                                         <td className="py-3.5 px-4">
                                             <div className="flex items-center gap-3">
-                                                {lead.avatar_url ? (
-                                                    <img src={lead.avatar_url} alt={lead.full_name} className="size-8 rounded-full border border-gray-100" />
-                                                ) : (
-                                                    <div className="size-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-500 border border-gray-100">
-                                                        {lead.full_name.charAt(0)}
-                                                    </div>
-                                                )}
-                                                <span className="text-sm font-semibold text-[#333333]">
+                                                <div className="size-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] font-black text-[#43B97B] uppercase shadow-sm shrink-0">
+                                                    {lead.full_name.charAt(0)}
+                                                </div>
+                                                <span className="text-sm font-bold text-[#111827] tracking-tight">
                                                     {lead.full_name}
                                                 </span>
                                             </div>

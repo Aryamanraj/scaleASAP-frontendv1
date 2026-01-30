@@ -77,7 +77,13 @@ export default function OnboardingPage() {
                     }
                 }
                 if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted))
-                if (savedTestMode) setTestMode(savedTestMode === 'true')
+
+                // Prioritize testMode from server if it exists in loadedData
+                if (loadedData.testMode !== undefined) {
+                    setTestMode(loadedData.testMode)
+                } else if (savedTestMode) {
+                    setTestMode(savedTestMode === 'true')
+                }
 
                 setIsLoading(false)
                 console.log("OnboardingPage: Loading complete")
@@ -126,7 +132,7 @@ export default function OnboardingPage() {
             localStorage.removeItem(`onboarding_data_${workspaceId}`)
             localStorage.removeItem(`onboarding_step_${workspaceId}`)
             localStorage.removeItem(`onboarding_completed_${workspaceId}`)
-            localStorage.removeItem(`onboarding_testmode_${workspaceId}`)
+            // Keep onboarding_testmode localStorage to ensure it survives if DB save failed or for consistency
 
             // Completed last step
             window.location.assign('/workspaces')
@@ -167,7 +173,7 @@ export default function OnboardingPage() {
             localStorage.removeItem(`onboarding_data_${workspaceId}`)
             localStorage.removeItem(`onboarding_step_${workspaceId}`)
             localStorage.removeItem(`onboarding_completed_${workspaceId}`)
-            localStorage.removeItem(`onboarding_testmode_${workspaceId}`)
+            // Keep onboarding_testmode localStorage
 
             const result = await saveOnboardingDataToMarkdown(workspaceId, dataToSave, testMode)
             if (result.success) {
