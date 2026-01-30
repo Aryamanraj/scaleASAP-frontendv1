@@ -212,7 +212,7 @@ async function geminiChatCompletion(messages: ChatMessage[], temperature: number
     const { systemInstruction, history, lastUserMessage } = convertMessagesToGeminiFormat(messages);
 
     const modelParams: ModelParams = {
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-1.5-flash',
         generationConfig: { temperature }
     };
 
@@ -243,7 +243,7 @@ async function geminiChatCompletionStream(messages: ChatMessage[], temperature: 
     const { systemInstruction, history, lastUserMessage } = convertMessagesToGeminiFormat(messages);
 
     const modelParams: ModelParams = {
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-1.5-flash',
         generationConfig: { temperature }
     };
 

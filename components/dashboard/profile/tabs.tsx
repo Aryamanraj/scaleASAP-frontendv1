@@ -75,7 +75,7 @@ const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
                     <div
                         style={{
                             position: 'absolute',
-                            height: '30px',
+                            height: '34px',
                             transition: 'all 300ms ease-out',
                             backgroundColor: 'rgba(14, 15, 17, 0.08)',
                             borderRadius: '6px',
@@ -101,16 +101,16 @@ const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
                     />
 
                     {/* Tabs */}
-                    <div style={{ position: 'relative', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', display: 'flex', gap: '6px', alignItems: 'center', paddingBottom: '4px' }}>
                         {tabs.map((tab, index) => (
                             <div
                                 key={tab.id}
                                 ref={(el) => { tabRefs.current[index] = el; }}
                                 style={{
-                                    padding: '8px 12px',
+                                    padding: '7px 12px',
                                     cursor: 'pointer',
                                     transition: 'color 300ms',
-                                    height: '30px',
+                                    height: '34px',
                                     color: index === activeIndex ? '#0e0e10' : 'rgba(14, 15, 17, 0.6)',
                                 }}
                                 onMouseEnter={() => setHoveredIndex(index)}

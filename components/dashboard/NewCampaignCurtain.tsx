@@ -242,7 +242,7 @@ export function NewCampaignCurtain({ isOpen, onClose, onCreate }: NewCampaignCur
 
                 <div className="p-6 pt-2 mt-auto border-t border-gray-50 sticky bottom-0 bg-white/80 backdrop-blur-md">
                     <Button
-                        className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white h-10 font-medium rounded-md transition-all"
+                        className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white h-9 font-medium rounded-md transition-all"
                         disabled={!campaignName || selectedChannels.length === 0}
                     >
                         Create Campaign

@@ -12,6 +12,7 @@ import {
     CheckCircleIcon,
     ArrowRightIcon
 } from '@heroicons/react/24/outline'
+import { Lead } from '@/app/actions/leads'
 import { Badge } from '@/components/ui/badge'
 
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ interface CampaignsListProps {
     onNewCampaign?: () => void
     hasOngoingChat?: boolean
     isDiscoveryOpen?: boolean
+    leads: Lead[]
 }
 
 export function CampaignsList({
@@ -33,7 +35,8 @@ export function CampaignsList({
     selectedId,
     onNewCampaign,
     hasOngoingChat = false,
-    isDiscoveryOpen = false
+    isDiscoveryOpen = false,
+    leads
 }: CampaignsListProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -122,10 +125,9 @@ export function CampaignsList({
                 <table className="w-full table-fixed">
                     <thead>
                         <tr className="border-b border-[#EEEEEE] bg-gray-50/50">
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[80px]">ID</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[150px]">Name</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Experiment Strategy</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[120px]">Status</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[100px]">ID</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide">Name</th>
+                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[140px]">Status</th>
                             <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[80px]">Leads</th>
                             <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide w-[150px]">Created</th>
                         </tr>
@@ -148,7 +150,7 @@ export function CampaignsList({
                                 >
                                     {/* Campaign ID */}
                                     <td className="py-3.5 px-4">
-                                        <span className="text-sm font-medium text-[#333333]">
+                                        <span className="text-sm font-medium text-[#333333] whitespace-nowrap">
                                             CAM-{String(index + 1).padStart(4, '0')}
                                         </span>
                                     </td>
@@ -158,20 +160,6 @@ export function CampaignsList({
                                         <span className="text-sm font-semibold text-[#333333] group-hover:text-[#43B97B] truncate block" title={campaign.name}>
                                             {campaign.name}
                                         </span>
-                                    </td>
-
-                                    {/* Linked Experiment */}
-                                    <td className="py-3.5 px-4 min-w-0">
-                                        <div className="flex flex-col gap-0.5 min-w-0">
-                                            <span className="text-sm font-semibold text-[#333333] truncate block" title={experiment ? experiment.name.replace(/^[^:]+:\s*/, '') : 'No strategy linked'}>
-                                                {experiment ? experiment.name.replace(/^[^:]+:\s*/, '') : 'No strategy linked'}
-                                            </span>
-                                            {experiment && (
-                                                <span className="text-xs text-gray-500 truncate block whitespace-nowrap" title={experiment.pattern}>
-                                                    {experiment.pattern}
-                                                </span>
-                                            )}
-                                        </div>
                                     </td>
 
                                     {/* Status Badge */}
@@ -190,12 +178,11 @@ export function CampaignsList({
                                         </Badge>
                                     </td>
 
-                                    {/* Leads Count (Placeholder for now, could fetch from leads table) */}
                                     <td className="py-3.5 px-4">
                                         <div className="flex items-center gap-1.5">
                                             <UserGroupIcon className="size-3.5 text-gray-400" />
                                             <span className="text-sm font-medium text-[#333333]">
-                                                --
+                                                {leads.filter(l => l.campaign_id === campaign.id).length}
                                             </span>
                                         </div>
                                     </td>

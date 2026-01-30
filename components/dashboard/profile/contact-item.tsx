@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
+import { useDevToolsDetector } from "@/hooks/use-devtools-detector";
 
 interface ContactItemProps {
     icon: React.ReactNode;
@@ -10,6 +11,7 @@ interface ContactItemProps {
     hoverLabel?: string;
     actionType?: "copy" | "link";
     actionValue?: string;
+    isSensitive?: boolean;
 }
 
 export const ContactItem = ({
@@ -19,9 +21,11 @@ export const ContactItem = ({
     hoverLabel,
     actionType,
     actionValue,
+    isSensitive,
 }: ContactItemProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
+    const isDevToolsOpen = useDevToolsDetector();
 
     const isInteractive = !!actionType && !!actionValue;
 
@@ -70,7 +74,10 @@ export const ContactItem = ({
                     transition: "color 0.2s ease",
                 }}
             >
-                <span>
+                <span style={{
+                    filter: isSensitive && isDevToolsOpen ? 'blur(4px)' : 'none',
+                    transition: 'filter 0.3s ease'
+                }}>
                     {hasCopied ? "Copied" : isHovered && hoverLabel ? hoverLabel : value}
                 </span>
                 {hasCopied ? (

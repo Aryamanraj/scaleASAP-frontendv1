@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { updateExperiment } from '@/app/actions/workspaces'
 import { Tabs } from "@/components/dashboard/profile/tabs";
-import { ArrowLeft, HelpCircle, Rocket, Sparkles, Zap, AlertTriangle, MessageSquare, Filter, Share2, ClipboardList, RefreshCw } from "lucide-react";
+import { ArrowLeft, HelpCircle, Rocket, Sparkles, Zap, AlertTriangle, MessageSquare, Filter, Share2, ClipboardList, RefreshCw, X, Plus } from "lucide-react";
 
 interface ExperimentDetailCurtainProps {
     experiment: Experiment | null
@@ -93,17 +93,12 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
         >
             <div className="flex-1 overflow-y-auto bg-white flex flex-col h-full no-scrollbar">
                 {/* Fixed Top Controls */}
-                <div className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-30 pb-4">
+                <div className="px-6 pt-6 flex items-center justify-end sticky top-0 bg-white/95 backdrop-blur-sm z-30 pb-4">
                     <button
                         onClick={onClose}
-                        className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
+                        className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-full hover:bg-gray-50 transition-all"
                     >
-                        <ArrowLeft size={16} color="#4a4a4a" />
-                    </button>
-                    <button
-                        className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
-                    >
-                        <HelpCircle size={16} color="#4a4a4a" />
+                        <X size={18} color="#4a4a4a" />
                     </button>
                 </div>
 
@@ -111,17 +106,10 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
                 <div className="px-6 flex flex-col gap-1">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-black text-[#43B97B] uppercase tracking-widest">Experiment Protocol</span>
                             <h2 className="text-2xl font-bold text-[#434343] tracking-tight leading-tight">
                                 {displayExp.name.replace(/^[^:]+:\s*/, '')}
                             </h2>
                         </div>
-                        <div className="bg-[#43B97B]/10 px-2 py-1 rounded-md text-[10px] font-bold text-[#43B97B] tracking-widest h-fit mt-1 whitespace-nowrap">
-                            READY TO SCALE
-                        </div>
-                    </div>
-                    <div className="text-[13px] text-[#434343] font-medium font-geist mt-1">
-                        Growth Strategy • <span className="font-bold text-[#10B981]">Optimized Performance</span>
                     </div>
                 </div>
 
@@ -252,13 +240,13 @@ export function ExperimentDetailCurtain({ experiment, isOpen, onClose, onCreateC
                     <Button
                         onClick={handleCreateCampaign}
                         disabled={isCreatingCampaign}
-                        className="w-full bg-[#43B97B] hover:bg-[#3ca86d] text-white h-12 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#43B97B]/10 hover:scale-[1.02] active:scale-95 border-none"
+                        className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white flex items-center justify-center gap-2"
                     >
                         {isCreatingCampaign ? (
-                            <RefreshCw size={20} className="animate-spin" />
+                            <RefreshCw size={18} className="animate-spin" />
                         ) : (
                             <>
-                                <Rocket size={20} fill="currentColor" />
+                                <Rocket size={18} fill="currentColor" />
                                 Launch Campaign
                             </>
                         )}

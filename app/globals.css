@@ -22,7 +22,7 @@
   --destructive-foreground: oklch(0.9851 0 0);
   --border: oklch(0.9276 0.0058 264.5313);
   --input: oklch(0.9276 0.0058 264.5313);
-  --ring: oklch(0.6716 0.1368 48.5130);
+  --ring: #43B97B;
   --chart-1: oklch(0.5940 0.0443 196.0233);
   --chart-2: oklch(0.7214 0.1337 49.9802);
   --chart-3: oklch(0.8721 0.0864 68.5474);
@@ -30,12 +30,12 @@
   --chart-5: oklch(0.6830 0 0);
   --sidebar: oklch(0.9670 0.0029 264.5419);
   --sidebar-foreground: oklch(0.2101 0.0318 264.6645);
-  --sidebar-primary: oklch(0.6716 0.1368 48.5130);
+  --sidebar-primary: #43B97B;
   --sidebar-primary-foreground: oklch(1.0000 0 0);
   --sidebar-accent: oklch(1.0000 0 0);
   --sidebar-accent-foreground: oklch(0.2101 0.0318 264.6645);
   --sidebar-border: oklch(0.9276 0.0058 264.5313);
-  --sidebar-ring: oklch(0.6716 0.1368 48.5130);
+  --sidebar-ring: #43B97B;
   --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif, system-ui;
   --font-serif: var(--font-instrument-serif), ui-serif, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -77,7 +77,7 @@
   --destructive-foreground: oklch(0.1797 0.0043 308.1928);
   --border: oklch(0.2520 0 0);
   --input: oklch(0.2520 0 0);
-  --ring: oklch(0.7214 0.1337 49.9802);
+  --ring: #43B97B;
   --chart-1: oklch(0.5940 0.0443 196.0233);
   --chart-2: oklch(0.7214 0.1337 49.9802);
   --chart-3: oklch(0.8721 0.0864 68.5474);
@@ -85,12 +85,12 @@
   --chart-5: oklch(0.6830 0 0);
   --sidebar: oklch(0.1822 0 0);
   --sidebar-foreground: oklch(0.8109 0 0);
-  --sidebar-primary: oklch(0.7214 0.1337 49.9802);
+  --sidebar-primary: #43B97B;
   --sidebar-primary-foreground: oklch(0.1797 0.0043 308.1928);
   --sidebar-accent: oklch(0.3211 0 0);
   --sidebar-accent-foreground: oklch(0.8109 0 0);
   --sidebar-border: oklch(0.2520 0 0);
-  --sidebar-ring: oklch(0.7214 0.1337 49.9802);
+  --sidebar-ring: #43B97B;
   --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif, system-ui;
   --font-serif: var(--font-instrument-serif), ui-serif, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;

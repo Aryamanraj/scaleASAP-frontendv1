@@ -1,7 +1,7 @@
 "use client";
 
 import { FlickeringGrid } from "@/components/dashboard/profile/flickering-grid";
-import { ArrowLeft, HelpCircle, Flame, Mail, Phone, MapPin, Activity, Copy, ExternalLink, Globe, CheckCheck, Briefcase, GraduationCap, CheckCircle, MessageSquare, Sparkles, Send, ChevronDown, Loader2, Upload, Trash2 } from "lucide-react";
+import { ArrowLeft, HelpCircle, Flame, Mail, Phone, MapPin, Activity, Copy, ExternalLink, Globe, CheckCheck, Briefcase, GraduationCap, CheckCircle, MessageSquare, Sparkles, Send, ChevronDown, Loader2, Upload, Trash2, X } from "lucide-react";
 import { LinkedInIcon, XIcon, GmailIcon } from "@/components/dashboard/profile/social-icons";
 import { ContactItem } from "@/components/dashboard/profile/contact-item";
 import { SocialActionCard } from "@/components/dashboard/profile/social-action-card";
@@ -12,6 +12,8 @@ import { Campaign } from "@/app/actions/campaigns";
 import { LEAD_STATUS_CONFIG, getStatusSequence, LeadStatus } from "@/lib/utils/lead-status";
 import { generateCustomOutreach } from "@/app/actions/leads";
 import { toast } from "sonner";
+import { decodeSensitiveData } from "@/lib/privacy";
+import { getGeneratedMessages, saveGeneratedMessage, deleteGeneratedMessage, GeneratedMessage } from "@/app/actions/messages";
 
 
 interface LeadProfileUIProps {
@@ -55,7 +57,8 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
     const [genType, setGenType] = useState('connection_request');
     const [genContext, setGenContext] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedMessages, setGeneratedMessages] = useState<any[]>([]);
+    const [generatedMessages, setGeneratedMessages] = useState<GeneratedMessage[]>([]);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
     const handleGenerate = async () => {
         if (isGenerating) return;
@@ -67,18 +70,23 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                 context: genContext
             });
 
-            const newMessage = {
-                id: Date.now().toString(),
-                content: result.followUpDM || result.connectionRequest || '',
+            const messageData = {
+                lead_id: lead.id,
                 platform: genPlatform,
-                type: genType,
-                timestamp: new Date().toLocaleTimeString(),
-                thinking: result.thinking?.whyThisApproach || 'Tailored to your needs'
+                message_type: genType,
+                content: result.followUpDM || result.connectionRequest || '',
+                context: genContext || undefined,
+                thinking: result.thinking?.whyThisApproach || 'Tailored to your needs',
+                timestamp: new Date().toISOString()
             };
 
-            setGeneratedMessages(prev => [newMessage, ...prev]);
-            toast.success("Message generated successfully!");
-            setGenContext(''); // Clear context after generation
+            // Save to database
+            const savedMessage = await saveGeneratedMessage(messageData);
+            if (savedMessage) {
+                setGeneratedMessages(prev => [savedMessage, ...prev]);
+                toast.success("Message generated successfully!");
+                setGenContext(''); // Clear context after generation
+            }
         } catch (error) {
             console.error("Failed to generate message:", error);
             toast.error("Failed to generate message. Please try again.");
@@ -113,11 +121,28 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
 
     const isLoaded = hasCompletedAnimation || statusIndex === statuses.length - 1;
 
+    // Load existing messages from database
     useEffect(() => {
-        if (isLoaded && generatedMessages.length === 0 && !isGenerating) {
+        const loadMessages = async () => {
+            setIsLoadingMessages(true);
+            try {
+                const messages = await getGeneratedMessages(lead.id);
+                setGeneratedMessages(messages);
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+            } finally {
+                setIsLoadingMessages(false);
+            }
+        };
+        loadMessages();
+    }, [lead.id]);
+
+    // Auto-generate initial message only if none exist
+    useEffect(() => {
+        if (isLoaded && !isLoadingMessages && generatedMessages.length === 0 && !isGenerating) {
             handleGenerate();
         }
-    }, [isLoaded, generatedMessages.length, isGenerating]);
+    }, [isLoaded, isLoadingMessages, generatedMessages.length, isGenerating]);
 
     useEffect(() => {
         // Reset animation state when lead changes
@@ -156,6 +181,10 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
     };
 
     const enrichment = lead.enrichment_data;
+
+    // Decode sensitive data for display (obfuscated in transit)
+    const decodedEmail = decodeSensitiveData(lead.email) || lead.email;
+    const decodedPhone = decodeSensitiveData(enrichment?.phone) || enrichment?.phone;
 
     return (
         <div
@@ -219,25 +248,6 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                             style={{
                                 position: 'absolute',
                                 top: '12px',
-                                left: '12px',
-                                width: '28px',
-                                height: '28px',
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #eeeeee',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                zIndex: 10
-                            }}
-                        >
-                            <ArrowLeft size={16} color="#4a4a4a" />
-                        </button>
-                        <button
-                            style={{
-                                position: 'absolute',
-                                top: '12px',
                                 right: '12px',
                                 width: '28px',
                                 height: '28px',
@@ -251,7 +261,7 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                 zIndex: 10
                             }}
                         >
-                            <HelpCircle size={16} color="#4a4a4a" />
+                            <X size={16} color="#4a4a4a" />
                         </button>
                     </div>
                 </div>
@@ -648,10 +658,11 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                         <ContactItem
                                             icon={<Mail size={16} />}
                                             label="Email"
-                                            value={lead.email || "N/A"}
+                                            value={decodedEmail || "N/A"}
                                             actionType="copy"
-                                            actionValue={lead.email}
+                                            actionValue={decodedEmail}
                                             hoverLabel="Copy email"
+                                            isSensitive={true}
                                         />
 
                                         <div style={{
@@ -666,10 +677,11 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                         <ContactItem
                                             icon={<Phone size={16} />}
                                             label="Phone"
-                                            value={enrichment?.phone || "N/A"}
+                                            value={decodedPhone || "N/A"}
                                             actionType="copy"
-                                            actionValue={enrichment?.phone}
+                                            actionValue={decodedPhone}
                                             hoverLabel="Copy phone"
+                                            isSensitive={true}
                                         />
 
                                         <div style={{
@@ -934,10 +946,20 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                                     }}>
                                                         {msg.platform}
                                                     </div>
-                                                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>{msg.timestamp}</span>
+                                                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                                        {new Date(msg.timestamp).toLocaleString()}
+                                                    </span>
                                                 </div>
                                                 <button
-                                                    onClick={() => setGeneratedMessages(prev => prev.filter(m => m.id !== msg.id))}
+                                                    onClick={async () => {
+                                                        try {
+                                                            await deleteGeneratedMessage(msg.id);
+                                                            setGeneratedMessages(prev => prev.filter(m => m.id !== msg.id));
+                                                            toast.success("Message deleted");
+                                                        } catch (error) {
+                                                            toast.error("Failed to delete message");
+                                                        }
+                                                    }}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#9ca3af' }}
                                                 >
                                                     <Trash2 size={14} />
@@ -956,10 +978,11 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                                 {msg.content}
                                             </div>
 
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Sparkles size={12} color="#10B981" />
-                                                <span style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>{msg.thinking}</span>
-                                            </div>
+                                            {msg.thinking && (
+                                                <div style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic', marginTop: '4px' }}>
+                                                    💡 {msg.thinking}
+                                                </div>
+                                            )}
 
                                             <div style={{ display: 'flex', gap: '8px' }}>
                                                 <button

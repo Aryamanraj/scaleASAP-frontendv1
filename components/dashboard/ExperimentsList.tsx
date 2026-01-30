@@ -157,18 +157,18 @@ export function ExperimentsList({
                             >
                                 {/* Experiment ID */}
                                 <td className="py-3.5 px-4">
-                                    <span className="text-sm font-medium text-[#333333]">
+                                    <span className="text-sm font-medium text-[#333333] whitespace-nowrap">
                                         EXP-{String(index + 1).padStart(4, '0')}
                                     </span>
                                 </td>
 
                                 {/* Name & Pattern */}
                                 <td className="py-3.5 px-4 overflow-hidden">
-                                    <div className="flex flex-col gap-0.5 min-w-0">
-                                        <span className="text-sm font-semibold text-[#333333] truncate block" title={experiment.name.replace(/^[^:]+:\s*/, '')}>
+                                    <div className="flex flex-col gap-1 min-w-0">
+                                        <span className="text-sm font-bold text-[#333333] truncate" title={experiment.name.replace(/^[^:]+:\s*/, '')}>
                                             {experiment.name.replace(/^[^:]+:\s*/, '')}
                                         </span>
-                                        <span className="text-xs text-gray-500 truncate block whitespace-nowrap" title={experiment.pattern}>
+                                        <span className="text-[11px] text-gray-400 truncate font-medium" title={experiment.pattern}>
                                             {experiment.pattern}
                                         </span>
                                     </div>

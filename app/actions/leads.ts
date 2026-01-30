@@ -71,6 +71,24 @@ export interface Lead {
     updated_at: string
     avatar_url?: string
 }
+function obfuscateSensitiveData(data?: string) {
+    if (!data) return data
+    // Use Base64 to obfuscate (not encrypt) the data
+    // This hides it from casual inspection in network/JSON views
+    // but allows client-side decoding
+    return Buffer.from(data).toString('base64')
+}
+
+function obfuscateLeadData(lead: Lead): Lead {
+    return {
+        ...lead,
+        email: obfuscateSensitiveData(lead.email),
+        enrichment_data: lead.enrichment_data ? {
+            ...lead.enrichment_data,
+            phone: obfuscateSensitiveData(lead.enrichment_data.phone)
+        } : undefined
+    }
+}
 
 const MOCK_LEADS: Lead[] = [
     {
@@ -194,12 +212,11 @@ export async function getLeads(campaignId: string) {
             return []
         }
 
-        // Return mock data if no leads found, for demo purposes
         if (!leads || leads.length === 0) {
-            return MOCK_LEADS.map(l => ({ ...l, campaign_id: campaignId }))
+            return []
         }
 
-        return leads as Lead[]
+        return (leads as Lead[]).map(obfuscateLeadData)
     } catch (error) {
         console.error('Unexpected error in getLeads:', error)
         return []
@@ -230,10 +247,10 @@ export async function getAllLeads(workspaceId: string) {
         // Return mock data ONLY if no real leads found and we are in a demo/dev environment
         // For now, let's keep it consistent with getLeads
         if (!leads || leads.length === 0) {
-            return MOCK_LEADS.map(l => ({ ...l, workspace_id: workspaceId }))
+            return []
         }
 
-        return leads as Lead[]
+        return (leads as Lead[]).map(obfuscateLeadData)
     } catch (error) {
         console.error('Unexpected error in getAllLeads:', error)
         return []
@@ -266,7 +283,7 @@ export async function addLeads(campaignId: string, workspaceId: string, leads: P
             throw new Error(error.message)
         }
 
-        return data as Lead[]
+        return (data as Lead[]).map(obfuscateLeadData)
     } catch (error) {
         console.error('Unexpected error in addLeads:', error)
         throw error

@@ -12,9 +12,17 @@ import { Label } from '@/components/ui/label'
 import { LeadCard } from './LeadCard'
 import { LeadProfileUI } from './LeadProfileUI'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import { Tabs } from "@/components/dashboard/profile/tabs";
-import { ArrowLeft, HelpCircle, Rocket, BarChart2, Users, Settings as SettingsIcon, Zap, MessageSquare, Plus, Trash2, Edit3, Check, MoreHorizontal, Play, ExternalLink, RefreshCw } from "lucide-react";
+import { ArrowLeft, HelpCircle, Rocket, BarChart2, Users, Settings as SettingsIcon, Zap, MessageSquare, Plus, Trash2, Edit3, Check, X, MoreHorizontal, Play, ExternalLink, RefreshCw, ChevronDown } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import {
     CheckIcon,
     ArrowsUpDownIcon,
@@ -34,9 +42,12 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
     const [leads, setLeads] = useState<Lead[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isScaling, setIsScaling] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [scaleAmount, setScaleAmount] = useState('25')
     const [localCampaign, setLocalCampaign] = useState<Campaign | null>(campaign)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
     const [initialDetailTab, setInitialDetailTab] = useState<'analysis' | 'overview' | 'outreach'>('analysis')
+    const router = useRouter()
 
     // Helper to convert hex to rgba with opacity
     const getDataUrlColor = (hex: string, opacity: number) => {
@@ -73,25 +84,44 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
         if (!campaign) return
         setIsScaling(true)
         await new Promise(resolve => setTimeout(resolve, 3000))
-        const newLeads: Lead[] = [
-            {
-                id: `scale-${Date.now()}-1`,
-                full_name: "Sarah Chen",
-                job_title: "Head of Logistics",
-                company: "Flow State",
-                status: "found",
-                outcome: "no_response",
-                campaign_id: campaign.id,
-                workspace_id: campaign.workspace_id,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }
-        ]
+        const count = parseInt(scaleAmount)
+        const newLeads: Lead[] = Array.from({ length: count }).map((_, i) => ({
+            id: `scale-${Date.now()}-${i}`,
+            full_name: ["Sarah Chen", "James Wilson", "Anita Raj", "Marcus Low"][i % 4],
+            job_title: ["Head of Logistics", "Sales Director", "Product Manager", "CTO"][i % 4],
+            company: ["Flow State", "Growth Co", "TechNova", "Stripe"][i % 4],
+            status: "found",
+            outcome: "no_response",
+            campaign_id: campaign.id,
+            workspace_id: campaign.workspace_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }))
         setLeads(prev => [...prev, ...newLeads])
         setIsScaling(false)
+        toast.success(`Scaled campaign by ${count} leads`)
     }
 
-    const displayCampaign = campaign || localCampaign
+    const handleSaveChanges = async () => {
+        if (!displayCampaign || !localCampaign) return
+        setIsSaving(true)
+        try {
+            const { success } = await updateCampaign(displayCampaign.id, {
+                name: localCampaign.name,
+                status: localCampaign.status
+            })
+            if (success) {
+                toast.success("Changes saved successfully")
+                router.refresh()
+            }
+        } catch (err: any) {
+            toast.error(err.message || "Failed to save changes")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const displayCampaign = localCampaign || campaign
 
     useEffect(() => {
         if (!isOpen) {
@@ -120,17 +150,12 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
                 ) : (
                     <>
                         {/* Fixed Top Controls */}
-                        <div className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-30 pb-4">
+                        <div className="px-6 pt-6 flex items-center justify-end sticky top-0 bg-white/95 backdrop-blur-sm z-30 pb-4">
                             <button
                                 onClick={onClose}
-                                className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
+                                className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-full hover:bg-gray-50 transition-all"
                             >
-                                <ArrowLeft size={16} color="#4a4a4a" />
-                            </button>
-                            <button
-                                className="size-8 flex items-center justify-center border border-[#EEEEEE] bg-white rounded-lg hover:bg-gray-50 transition-all"
-                            >
-                                <HelpCircle size={16} color="#4a4a4a" />
+                                <X size={18} color="#4a4a4a" />
                             </button>
                         </div>
 
@@ -138,13 +163,21 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
                         <div className="px-6 flex flex-col gap-1">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] font-black text-[#43B97B] uppercase tracking-widest">Active Campaign</span>
+                                    <span className={cn(
+                                        "text-[10px] font-black uppercase tracking-widest",
+                                        displayCampaign.status === 'active' ? "text-[#43B97B]" : "text-amber-500"
+                                    )}>
+                                        {displayCampaign.status === 'active' ? 'Active Campaign' : 'Paused Campaign'}
+                                    </span>
                                     <h2 className="text-2xl font-bold text-[#434343] tracking-tight leading-tight">
                                         {displayCampaign.name}
                                     </h2>
                                 </div>
-                                <div className="bg-[#43B97B]/10 px-2 py-1 rounded-md text-[10px] font-bold text-[#43B97B] tracking-widest h-fit mt-1 whitespace-nowrap">
-                                    ACTIVE
+                                <div className={cn(
+                                    "px-2 py-1 rounded-md text-[10px] font-bold tracking-widest h-fit mt-1 whitespace-nowrap uppercase",
+                                    displayCampaign.status === 'active' ? "bg-[#43B97B]/10 text-[#43B97B]" : "bg-amber-50 text-amber-600"
+                                )}>
+                                    {displayCampaign.status}
                                 </div>
                             </div>
                             <div className="text-[13px] text-[#434343] font-medium font-geist mt-1">
@@ -169,7 +202,10 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
 
                         <div className="flex-1 overflow-y-auto min-h-0">
                             {activeTab === 'activity' && (
-                                <ActivityView outcomes={leads.filter(l => l.outcome).map(l => ({ id: l.id, lead_name: l.full_name, outcome: l.outcome!, date: l.updated_at }))} />
+                                <ActivityView
+                                    outcomes={leads.filter(l => l.outcome).map(l => ({ id: l.id, lead_name: l.full_name, outcome: l.outcome!, date: l.updated_at }))}
+                                    leadCount={leads.length}
+                                />
                             )}
                             {activeTab === 'leads' && (
                                 <LeadsListView
@@ -201,13 +237,38 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
 
             {!selectedLead && (activeTab === 'activity' || activeTab === 'leads') && (
                 <div className="p-6 pt-0 border-t border-[#EEEEEE] bg-white">
+                    <div className="flex gap-2 mt-6">
+                        <Button
+                            onClick={handleScale}
+                            disabled={isScaling}
+                            className="flex-1 bg-[#43B97B] hover:bg-[#3CA66F] text-white flex items-center justify-center gap-2"
+                        >
+                            {isScaling ? <RefreshCw size={18} className="animate-spin" /> : <Rocket size={18} fill="currentColor" />}
+                            {isScaling ? "Scaling..." : "Scale Campaign"}
+                        </Button>
+                        <Select value={scaleAmount} onValueChange={setScaleAmount}>
+                            <SelectTrigger className="w-24 h-9 bg-white border-[#EEEEEE] focus:ring-[#43B97B]">
+                                <SelectValue placeholder="25" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="25">25</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                                <SelectItem value="100">100</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            )}
+
+            {!selectedLead && activeTab === 'settings' && (
+                <div className="p-6 pt-0 border-t border-[#EEEEEE] bg-white">
                     <Button
-                        onClick={handleScale}
-                        disabled={isScaling}
-                        className="w-full bg-[#43B97B] hover:bg-[#3ca86d] text-white h-12 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#43B97B]/10 hover:scale-[1.02] active:scale-95 border-none mt-6"
+                        onClick={handleSaveChanges}
+                        disabled={isSaving}
+                        className="w-full bg-[#43B97B] hover:bg-[#3CA66F] text-white mt-6 flex items-center justify-center gap-2"
                     >
-                        {isScaling ? <RefreshCw size={20} className="animate-spin" /> : <Rocket size={20} fill="currentColor" />}
-                        {isScaling ? "SCALING..." : "SCALE CAMPAIGN"}
+                        {isSaving ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} />}
+                        {isSaving ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
             )}
@@ -215,10 +276,10 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
     )
 }
 
-function ActivityView({ outcomes }: { outcomes: { id: string, lead_name: string, outcome: string, date: string }[] }) {
+function ActivityView({ outcomes, leadCount }: { outcomes: { id: string, lead_name: string, outcome: string, date: string }[], leadCount: number }) {
     const activitySteps = [
         { id: 'searching', title: 'Searching for leads', status: 'completed', description: 'Matched against strategy criteria' },
-        { id: 'found', title: '124 Leads Found', status: 'completed', description: 'High-intent profiles identified' },
+        { id: 'found', title: `${leadCount} Leads Found`, status: 'completed', description: 'High-intent profiles identified' },
         { id: 'enriched', title: 'Conducting deep lead enrichment', status: 'current', description: 'Analyzing experience and recent activities' },
         { id: 'prioritizing', title: 'Prioritizing leads by warm behavior', status: 'pending', description: 'Scoring based on relevance' },
         { id: 'angles', title: 'Generating outreach angles', status: 'pending', description: 'Crafting personalized hooks' }
@@ -240,7 +301,7 @@ function ActivityView({ outcomes }: { outcomes: { id: string, lead_name: string,
                 <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100/50">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Leads found</p>
-                        <p className="text-lg font-bold text-[#333333]">124</p>
+                        <p className="text-lg font-bold text-[#333333]">{leadCount}</p>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100/50">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Researched</p>
@@ -373,16 +434,18 @@ function SettingsView({ campaign, onUpdate }: { campaign: Campaign, onUpdate: (u
 
     return (
         <div className="p-8 space-y-10 animate-in fade-in duration-500 max-w-2xl mx-auto pb-24">
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Campaign Identity</h4>
                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold text-gray-500">Campaign Name</Label>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-gray-500">Campaign Name</Label>
                         <Input
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            onBlur={() => onUpdate({ name })}
-                            className="bg-white border-[#EEEEEE] focus-visible:ring-[#43B97B] rounded-xl h-11 font-medium"
+                            onChange={(e) => {
+                                setName(e.target.value)
+                                onUpdate({ name: e.target.value })
+                            }}
+                            className="bg-white border-[#EEEEEE] focus-visible:ring-[#43B97B] font-medium"
                         />
                     </div>
                 </div>
@@ -402,7 +465,18 @@ function SettingsView({ campaign, onUpdate }: { campaign: Campaign, onUpdate: (u
                             </div>
                         </div>
                         <button
-                            onClick={() => onUpdate({ status: campaign.status === 'active' ? 'paused' : 'active' })}
+                            onClick={async () => {
+                                if (!campaign?.id) return
+                                const newStatus = campaign.status === 'active' ? 'paused' : 'active'
+                                onUpdate?.({ status: newStatus })
+                                try {
+                                    await updateCampaign(campaign.id, { status: newStatus })
+                                    toast.success(`Campaign ${newStatus}`)
+                                } catch (err) {
+                                    toast.error("Failed to update status")
+                                    onUpdate?.({ status: campaign.status }) // Revert on failure
+                                }
+                            }}
                             className={cn(
                                 "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
                                 campaign.status === 'active' ? "bg-[#43B97B]" : "bg-gray-200"
@@ -417,13 +491,13 @@ function SettingsView({ campaign, onUpdate }: { campaign: Campaign, onUpdate: (u
                 </div>
             </div>
 
-            <div className="space-y-6 pt-4">
-                <h4 className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Danger Zone</h4>
+            <div className="space-y-4 pt-4">
+                <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Danger Zone</h4>
                 <div className="relative">
                     {isDeleting ? (
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                            <RefreshCw className="size-8 text-[#43B97B] animate-spin" />
-                            <p className="text-sm font-bold text-[#333333] uppercase tracking-widest">DELETING...</p>
+                        <div className="flex flex-col items-center justify-center py-6 space-y-3">
+                            <RefreshCw className="size-6 text-[#ef4444] animate-spin" />
+                            <p className="text-[10px] font-bold text-[#ef4444] uppercase tracking-widest">Deleting...</p>
                         </div>
                     ) : (
                         <HoldToDeleteButton onDelete={handleDelete} />
@@ -465,13 +539,21 @@ function HoldToDeleteButton({ onDelete }: { onDelete: () => void }) {
             onPointerDown={startHolding}
             onPointerUp={stopHolding}
             onPointerLeave={stopHolding}
-            className="w-full relative h-14 bg-gray-50 rounded-2xl overflow-hidden border border-[#EEEEEE] group transition-all active:scale-[0.98] shadow-sm"
+            className="w-full relative h-9 bg-[#ef4444] rounded-md overflow-hidden group transition-all active:scale-[0.98] shadow-sm flex items-center justify-center"
         >
-            <div className="absolute inset-y-0 left-0 bg-red-50 transition-all duration-75 ease-linear pointer-events-none" style={{ width: `${progress}%` }} />
-            <div className="relative z-10 flex items-center justify-center gap-3 w-full h-full px-6">
-                <Trash2 className={cn("size-5 transition-colors", progress > 0 ? "text-red-500" : "text-gray-400 group-hover:text-red-500")} />
-                <span className={cn("font-bold text-sm tracking-tight uppercase tracking-widest transition-colors", progress > 0 ? "text-red-600" : "text-[#333333]")}>
-                    {isHolding ? 'Holding...' : 'Hold to Delete'}
+            {/* Light red background track revealed when holding */}
+            {isHolding && <div className="absolute inset-0 bg-red-100 pointer-events-none" />}
+
+            {/* Dark red progress bar */}
+            <div
+                className="absolute inset-y-0 left-0 bg-red-700 transition-all duration-75 ease-linear pointer-events-none"
+                style={{ width: `${progress}%` }}
+            />
+
+            <div className="relative z-10 flex items-center justify-center gap-2 w-full h-full px-4">
+                <Trash2 className={cn("size-4 transition-colors", isHolding ? "text-red-700" : "text-white")} />
+                <span className={cn("font-medium text-sm transition-colors", isHolding ? "text-red-800" : "text-white")}>
+                    {isHolding ? 'Holding...' : 'Delete Campaign'}
                 </span>
             </div>
         </button>

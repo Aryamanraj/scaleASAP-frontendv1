@@ -64,20 +64,8 @@ export function LeadCard({ lead, onUpdateOutcome, onClick, onGenerateOutreach }:
 
             {/* Right: Actions/Status */}
             <div className="shrink-0 flex items-center gap-3">
-                {/* Secondary Action: Craft Message (Visible on Hover) */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onGenerateOutreach?.();
-                    }}
-                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 px-3 py-1.5 bg-[#43B97B]/10 text-[#43B97B] rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-[#43B97B] hover:text-white"
-                >
-                    <SparklesIcon className="size-3.5" />
-                    <span>Craft Message</span>
-                </button>
-
-                {/* Status Badge (Default) */}
-                <div className="group-hover:hidden">
+                {/* Status Badge */}
+                <div>
                     <Badge variant="secondary" className={cn(
                         "capitalize px-2 py-0.5 text-[10px] font-bold tracking-tight rounded-md border-none",
                         lead.status === 'sent' || lead.status === 'responded' ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-400"

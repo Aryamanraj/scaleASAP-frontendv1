@@ -241,6 +241,7 @@ export default function DashboardPage() {
                                     }}
                                     hasOngoingChat={hasChatHistory}
                                     isDiscoveryOpen={showDiscoveryChat}
+                                    leads={allLeads}
                                 />
                             </div>
                         )}
