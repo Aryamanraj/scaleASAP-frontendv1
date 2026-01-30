@@ -4,7 +4,11 @@ import fs from "fs/promises"
 import path from "path"
 import { revalidatePath } from "next/cache"
 import { OnboardingData } from "@/lib/onboarding-data"
-import { createClient } from "@/lib/supabase/server"
+import {
+    serverGetOnboardingData,
+    serverUpsertOnboardingData,
+    type OnboardingData as ServerOnboardingData,
+} from '@/lib/api/server-onboarding'
 
 function isOnboardingComplete(data: OnboardingData, testMode: boolean = false): boolean {
     const hasBasics = !!(data.companyName && data.website && data.companyType && data.userName);
@@ -39,71 +43,25 @@ function isOnboardingComplete(data: OnboardingData, testMode: boolean = false): 
 export async function saveOnboardingDataToMarkdown(workspaceId: string, data: OnboardingData, testMode: boolean = false, isAdditionalInfo: boolean = false) {
     try {
         console.log(`[saveOnboardingData] workspaceId: ${workspaceId}, testMode: ${testMode}, isAdditionalInfo: ${isAdditionalInfo}`);
-        // 1. Save to Supabase
-        const supabase = await createClient()
-        const { data: existing } = await supabase.from('onboarding_data').select('id').eq('workspace_id', workspaceId).single()
+        
+        // Calculate if complete
+        const markComplete = isOnboardingComplete(data, testMode);
+        console.log(`[saveOnboardingData] Final status for workspace ${workspaceId}: ${markComplete ? 'complete' : 'incomplete'}`);
 
-        const payload = {
-            workspace_id: workspaceId,
-            updated_at: new Date().toISOString(),
-            data: data
-        }
+        // Save to backend
+        await serverUpsertOnboardingData(
+            Number(workspaceId),
+            data as ServerOnboardingData,
+            markComplete
+        )
 
-        let error;
-        if (existing) {
-            const { error: updateError } = await supabase
-                .from('onboarding_data')
-                .update(payload)
-                .eq('workspace_id', workspaceId)
-            error = updateError;
-        } else {
-            const { error: insertError } = await supabase
-                .from('onboarding_data')
-                .insert(payload)
-                .eq('workspace_id', workspaceId)
-            error = insertError;
-        }
-
-        // Sync basic info to parent workspaces table
-        if (!error) {
-            // Check current status
-            const { data: currentWs } = await supabase.from('workspaces').select('onboarding_status').eq('id', workspaceId).single()
-
-            // If it's additional info and already complete, keep it complete
-            // Otherwise, calculate based on data
-            let isComplete = currentWs?.onboarding_status === 'complete';
-
-            if (!isAdditionalInfo || !isComplete) {
-                isComplete = isOnboardingComplete(data, testMode);
-            }
-
-            console.log(`[saveOnboardingData] Final status for workspace ${workspaceId}: ${isComplete ? 'complete' : 'incomplete'}`);
-
-            const { error: wsError } = await supabase
-                .from('workspaces')
-                .update({
-                    name: data.companyName || 'Untitled Workspace',
-                    website: data.website || '',
-                    favicon_url: data.favicon_url || '',
-                    onboarding_status: isComplete ? 'complete' : 'incomplete'
-                })
-                .eq('id', workspaceId)
-
-            if (wsError) {
-                console.error("Failed to sync workspace info:", wsError)
-            }
-        }
-
-        if (error) {
-            console.error("Supabase save error:", error)
-        }
-
-        // 2. Save to Markdown (Backup/Legacy)
+        // Build markdown path for reference
         const dirPath = path.join(process.cwd(), "data", "onboarding")
         const filePath = path.join(dirPath, `${workspaceId}.md`)
 
-        // Skip in development to prevent Next.js Fast Refresh loops
+        // Skip markdown save in development to prevent Next.js Fast Refresh loops
         if (process.env.NODE_ENV !== 'production') {
+            revalidatePath('/workspaces')
             return { success: true, path: filePath }
         }
 
@@ -200,6 +158,7 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
             markdown += `\n---\n\n${data.worldview_full}\n`
         }
 
+        await fs.mkdir(dirPath, { recursive: true })
         await fs.writeFile(filePath, markdown, "utf-8")
         console.log(`Saved onboarding data to ${filePath}`)
 
@@ -213,19 +172,14 @@ export async function saveOnboardingDataToMarkdown(workspaceId: string, data: On
 
 export async function getOnboardingData(workspaceId: string) {
     try {
-        const supabase = await createClient()
-        const { data, error } = await supabase
-            .from('onboarding_data')
-            .select('data')
-            .eq('workspace_id', workspaceId)
-            .single()
+        const response = await serverGetOnboardingData(Number(workspaceId))
 
-        if (error) {
-            console.error("Error fetching onboarding data:", error)
+        if (!response) {
+            console.log("No onboarding data found for workspace:", workspaceId)
             return null
         }
 
-        return data?.data as OnboardingData
+        return response.data as OnboardingData
     } catch (error) {
         console.error("Unexpected error fetching onboarding data:", error)
         return null

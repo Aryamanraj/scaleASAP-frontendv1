@@ -1,7 +1,17 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import {
+    serverGetCampaigns,
+    serverCreateCampaign,
+    serverUpdateCampaign,
+    serverDeleteCampaign,
+    type CampaignResponse,
+} from '@/lib/api/server-campaigns'
+
+// ============================================================================
+// Frontend Types (use string IDs for URL compatibility)
+// ============================================================================
 
 export interface Campaign {
     id: string
@@ -13,28 +23,30 @@ export interface Campaign {
     updated_at: string
 }
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function mapCampaignToFrontend(campaign: CampaignResponse): Campaign {
+    return {
+        id: String(campaign.CampaignID),
+        workspace_id: String(campaign.ProjectID),
+        experiment_id: campaign.ExperimentID ? String(campaign.ExperimentID) : '',
+        name: campaign.Name,
+        status: campaign.Status,
+        created_at: campaign.CreatedAt,
+        updated_at: campaign.UpdatedAt,
+    }
+}
+
+// ============================================================================
+// Campaign Actions
+// ============================================================================
+
 export async function getCampaigns(workspaceId: string) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            console.log('getCampaigns: No authenticated user')
-            return []
-        }
-
-        const { data: campaigns, error } = await supabase
-            .from('campaigns')
-            .select('*')
-            .eq('workspace_id', workspaceId)
-            .order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Error fetching campaigns:', error)
-            return []
-        }
-
-        return campaigns as Campaign[]
+        const campaigns = await serverGetCampaigns(Number(workspaceId))
+        return campaigns.map(mapCampaignToFrontend)
     } catch (error) {
         console.error('Unexpected error in getCampaigns:', error)
         return []
@@ -43,31 +55,13 @@ export async function getCampaigns(workspaceId: string) {
 
 export async function createCampaign(workspaceId: string, experimentId: string, name: string) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            throw new Error('User must be authenticated')
-        }
-
-        const { data: campaign, error } = await supabase
-            .from('campaigns')
-            .insert({
-                workspace_id: workspaceId,
-                experiment_id: experimentId,
-                name: name,
-                status: 'active'
-            })
-            .select()
-            .single()
-
-        if (error) {
-            console.error('Error creating campaign:', error)
-            throw new Error(error.message)
-        }
+        const campaign = await serverCreateCampaign(Number(workspaceId), {
+            name,
+            experimentId: experimentId ? Number(experimentId) : undefined,
+        })
 
         revalidatePath(`/dashboard/${workspaceId}`)
-        return campaign as Campaign
+        return mapCampaignToFrontend(campaign)
     } catch (error) {
         console.error('Unexpected error in createCampaign:', error)
         throw error
@@ -76,26 +70,11 @@ export async function createCampaign(workspaceId: string, experimentId: string, 
 
 export async function updateCampaign(campaignId: string, data: Partial<Campaign>) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const updateData: Parameters<typeof serverUpdateCampaign>[1] = {}
+        if (data.name !== undefined) updateData.name = data.name
+        if (data.status !== undefined) updateData.status = data.status
 
-        if (authError || !user) {
-            throw new Error('User must be authenticated')
-        }
-
-        const { error } = await supabase
-            .from('campaigns')
-            .update({
-                ...data,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', campaignId)
-
-        if (error) {
-            console.error('Error updating campaign:', error)
-            throw new Error(error.message)
-        }
-
+        await serverUpdateCampaign(Number(campaignId), updateData)
         return { success: true }
     } catch (error) {
         console.error('Unexpected error in updateCampaign:', error)
@@ -105,23 +84,7 @@ export async function updateCampaign(campaignId: string, data: Partial<Campaign>
 
 export async function deleteCampaign(campaignId: string) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            throw new Error('User must be authenticated')
-        }
-
-        const { error } = await supabase
-            .from('campaigns')
-            .delete()
-            .eq('id', campaignId)
-
-        if (error) {
-            console.error('Error deleting campaign:', error)
-            throw new Error(error.message)
-        }
-
+        await serverDeleteCampaign(Number(campaignId))
         return { success: true }
     } catch (error) {
         console.error('Unexpected error in deleteCampaign:', error)

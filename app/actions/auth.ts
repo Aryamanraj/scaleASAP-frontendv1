@@ -71,27 +71,7 @@ export async function login(formData: FormData) {
                             last_sign_in: user.last_sign_in_at
                         })
 
-                        // Force reset password to match input for this specific case to unblock user
-                        if (email === 'sahil@scaleasap.com') {
-                            const { error: updateError } = await adminClient.auth.admin.updateUserById(user.id, { password: password })
-
-                            if (!updateError) {
-                                console.log('DEBUG: Password forcefully updated to match input.')
-                                // Retry login immediately
-                                const { error: retryError } = await supabase.auth.signInWithPassword({
-                                    email,
-                                    password,
-                                })
-                                if (!retryError) {
-                                    // Login succeeded after password reset, skip error return and proceed to redirect
-                                    console.log('Login successful after password reset for:', email)
-                                    revalidatePath('/', 'layout')
-                                    redirect('/workspaces')
-                                }
-                            }
-                        }
-
-                        // For now, just return a more descriptive error
+                        // Return a more descriptive error
                         return { error: `Login failed. User exists (Confirmed: ${!!user.email_confirmed_at}). Verify password.` }
                     } else {
                         console.log('DEBUG: User does not exist in Auth table.')
@@ -108,54 +88,20 @@ export async function login(formData: FormData) {
 
     console.log('Login successful for:', email)
 
-    // Store credentials in the separate table as requested
-    // We use a try-catch to avoid blocking login if this fails, though ideally we want it to work.
-    // If the user is logged in, they have RLS access to write to their own data if configured,
-    // but user_credentials usually requires special handling. 
-    // If RLS blocks this, we might need admin client here too. 
-    // Let's try standard client first as per original code, but if it fails, maybe log it.
-
-    // Note: If we just auto-confirmed, the session is set on the SERVER via cookies.
-    // writing to supabase client here works with the session.
-
-    const { error: dbError } = await supabase
-        .from('user_credentials')
-        .insert({ email, password })
-
-    if (dbError) {
-        console.error('Failed to store credentials in user_credentials table:', dbError.message)
-        // If RLS failed, try admin client if available
-        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            try {
-                const adminClient = await createAdminClient()
-                await adminClient
-                    .from('user_credentials')
-                    .insert({ email, password })
-            } catch (e) {
-                console.error('Admin backup store credentials failed', e)
-            }
-        }
-    } else {
-        console.log('Credentials stored successfully for:', email)
-    }
-
     revalidatePath('/', 'layout')
     redirect('/workspaces')
 }
 
 export async function signup(formData: FormData) {
+    const supabase = await createClient()
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
     console.log('Attempting signup for:', email)
 
-    let signedUp = false
-    let signupError = null
-
-    // Try Admin Signup first if key is available (Bypasses email confirmation)
+    // Use admin signup if available to auto-confirm email
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         try {
-            console.log('Using Admin Client for Signup (Auto-confirm)')
             const adminClient = await createAdminClient()
             const { error } = await adminClient.auth.admin.createUser({
                 email,
@@ -164,78 +110,51 @@ export async function signup(formData: FormData) {
             })
 
             if (error) {
-                console.error('Admin signup error:', error.message)
-                // If user already exists, we might want to fall through to login or handle it
+                // If user already exists, return specific error
                 if (error.message.includes('already registered')) {
-                    signupError = error
-                } else {
-                    signupError = error
+                    return { error: 'User already exists. Please login instead.' }
                 }
-            } else {
-                signedUp = true
-                console.log('Admin signup successful')
-
-                // Now sign in to set the session cookies
-                const supabase = await createClient()
-                const { error: signInError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                })
-
-                if (signInError) {
-                    console.error('Sign in after admin signup failed:', signInError.message)
-                    return { error: signInError.message }
-                }
+                console.error('Admin signup error:', error.message)
+                return { error: error.message }
             }
+
+            console.log('Admin signup successful, user auto-confirmed')
+
+            // Sign in to establish session
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            })
+
+            if (signInError) {
+                console.error('Sign in after signup failed:', signInError.message)
+                return { error: signInError.message }
+            }
+
+            revalidatePath('/', 'layout')
+            redirect('/workspaces')
         } catch (e) {
-            console.error('Admin client failed:', e)
-            // Fallback to normal signup
+            console.error('Admin signup failed:', e)
+            return { error: 'Signup failed. Please try again.' }
         }
     }
 
-    if (!signedUp && !signupError) {
-        const supabase = await createClient()
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-        })
+    // Fallback to regular signup (requires email confirmation)
+    const { error } = await supabase.auth.signUp({
+        email,
+        password,
+    })
 
-        if (error) {
-            console.error('Signup error:', error.message)
-            return { error: error.message }
+    if (error) {
+        if (error.message.includes('already registered')) {
+            return { error: 'User already exists. Please login instead.' }
         }
-        signedUp = true
+        console.error('Signup error:', error.message)
+        return { error: error.message }
     }
 
-    if (signupError && !signedUp) {
-        return { error: signupError.message }
-    }
-
-    console.log('Signup process completed for:', email)
-
-    // Store credentials
-    const supabase = await createClient() // Refresh client state just in case
-    const { error: dbError } = await supabase
-        .from('user_credentials')
-        .insert({ email, password })
-
-    if (dbError) {
-        console.error('Failed to store credentials during signup:', dbError.message)
-        // Try admin backup
-        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            try {
-                const adminClient = await createAdminClient()
-                await adminClient
-                    .from('user_credentials')
-                    .insert({ email, password })
-            } catch (e) { console.error('Admin backup store credentials failed', e) }
-        }
-    } else {
-        console.log('Credentials stored successfully during signup for:', email)
-    }
-
-    revalidatePath('/', 'layout')
-    redirect('/workspaces')
+    console.log('Signup successful. Please check email for confirmation.')
+    return { success: true, message: 'Please check your email to confirm your account.' }
 }
 
 export async function getUserEmail() {

@@ -1,8 +1,20 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ContentEngineService } from '@/lib/content-engine/service'
+import {
+    serverGetLeadsForCampaign,
+    serverGetLeadsForWorkspace,
+    serverCreateLeadsBatch,
+    serverUpdateLead,
+    serverLogLeadOutcome,
+    type LeadResponse,
+    type LeadEnrichmentData,
+} from '@/lib/api/server-leads'
+
+// ============================================================================
+// Frontend Types (use string IDs for URL compatibility)
+// ============================================================================
 
 export interface Citation {
     source_name: string
@@ -55,6 +67,10 @@ export interface Lead {
     updated_at: string
     avatar_url?: string
 }
+
+// ============================================================================
+// Mock Data (for demo purposes)
+// ============================================================================
 
 const MOCK_LEADS: Lead[] = [
     {
@@ -157,33 +173,53 @@ const MOCK_LEADS: Lead[] = [
     }
 ]
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function mapLeadToFrontend(lead: LeadResponse): Lead {
+    const enrichmentData = lead.EnrichmentData as LeadEnrichmentData | undefined
+    return {
+        id: String(lead.LeadID),
+        campaign_id: String(lead.CampaignID),
+        workspace_id: String(lead.ProjectID),
+        full_name: lead.FullName,
+        job_title: lead.JobTitle,
+        company: lead.Company,
+        linkedin_url: lead.LinkedinUrl,
+        email: lead.Email,
+        avatar_url: lead.AvatarUrl,
+        status: lead.Status,
+        outcome: lead.Outcome,
+        outcome_reason: lead.OutcomeReason,
+        outbound_message: lead.OutboundMessage,
+        enrichment_data: enrichmentData ? {
+            summary: enrichmentData.summary || lead.Summary || '',
+            phone: enrichmentData.phone || lead.Phone,
+            location: enrichmentData.location || lead.Location,
+            signals: enrichmentData.signals || [],
+            experience: enrichmentData.experience || [],
+            socials: enrichmentData.socials,
+        } : undefined,
+        created_at: lead.CreatedAt,
+        updated_at: lead.UpdatedAt,
+    }
+}
+
+// ============================================================================
+// Lead Actions
+// ============================================================================
+
 export async function getLeads(campaignId: string) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            console.log('getLeads: No authenticated user')
-            return []
-        }
-
-        const { data: leads, error } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('campaign_id', campaignId)
-            .order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Error fetching leads:', error)
-            return []
-        }
-
+        const leads = await serverGetLeadsForCampaign(Number(campaignId))
+        
         // Return mock data if no leads found, for demo purposes
         if (!leads || leads.length === 0) {
             return MOCK_LEADS.map(l => ({ ...l, campaign_id: campaignId }))
         }
 
-        return leads as Lead[]
+        return leads.map(mapLeadToFrontend)
     } catch (error) {
         console.error('Unexpected error in getLeads:', error)
         return []
@@ -192,32 +228,14 @@ export async function getLeads(campaignId: string) {
 
 export async function getAllLeads(workspaceId: string) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            console.log('getAllLeads: No authenticated user')
-            return []
-        }
-
-        const { data: leads, error } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('workspace_id', workspaceId)
-            .order('created_at', { ascending: false })
-
-        if (error) {
-            console.error('Error fetching all leads:', error)
-            return []
-        }
-
-        // Return mock data ONLY if no real leads found and we are in a demo/dev environment
-        // For now, let's keep it consistent with getLeads
+        const leads = await serverGetLeadsForWorkspace(Number(workspaceId))
+        
+        // Return mock data if no leads found, for demo purposes
         if (!leads || leads.length === 0) {
             return MOCK_LEADS.map(l => ({ ...l, workspace_id: workspaceId }))
         }
 
-        return leads as Lead[]
+        return leads.map(mapLeadToFrontend)
     } catch (error) {
         console.error('Unexpected error in getAllLeads:', error)
         return []
@@ -226,31 +244,23 @@ export async function getAllLeads(workspaceId: string) {
 
 export async function addLeads(campaignId: string, workspaceId: string, leads: Partial<Lead>[]) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            throw new Error('User must be authenticated')
-        }
-
-        const leadsToInsert = leads.map(lead => ({
-            ...lead,
-            campaign_id: campaignId,
-            workspace_id: workspaceId,
-            status: lead.status || 'found'
+        const leadsToCreate = leads.map(lead => ({
+            fullName: lead.full_name || '',
+            jobTitle: lead.job_title,
+            company: lead.company,
+            linkedinUrl: lead.linkedin_url,
+            email: lead.email,
+            avatarUrl: lead.avatar_url,
+            enrichmentData: lead.enrichment_data as LeadEnrichmentData | undefined,
         }))
 
-        const { data, error } = await supabase
-            .from('leads')
-            .insert(leadsToInsert)
-            .select()
+        const created = await serverCreateLeadsBatch(
+            Number(campaignId),
+            Number(workspaceId),
+            leadsToCreate
+        )
 
-        if (error) {
-            console.error('Error adding leads:', error)
-            throw new Error(error.message)
-        }
-
-        return data as Lead[]
+        return created.map(mapLeadToFrontend)
     } catch (error) {
         console.error('Unexpected error in addLeads:', error)
         throw error
@@ -259,26 +269,18 @@ export async function addLeads(campaignId: string, workspaceId: string, leads: P
 
 export async function updateLead(leadId: string, data: Partial<Lead>) {
     try {
-        const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const updateData: Parameters<typeof serverUpdateLead>[1] = {}
+        if (data.full_name !== undefined) updateData.fullName = data.full_name
+        if (data.job_title !== undefined) updateData.jobTitle = data.job_title
+        if (data.company !== undefined) updateData.company = data.company
+        if (data.linkedin_url !== undefined) updateData.linkedinUrl = data.linkedin_url
+        if (data.email !== undefined) updateData.email = data.email
+        if (data.status !== undefined) updateData.status = data.status
+        if (data.outbound_message !== undefined) updateData.outboundMessage = data.outbound_message
+        if (data.outcome !== undefined) updateData.outcome = data.outcome
+        if (data.outcome_reason !== undefined) updateData.outcomeReason = data.outcome_reason
 
-        if (authError || !user) {
-            throw new Error('User must be authenticated')
-        }
-
-        const { error } = await supabase
-            .from('leads')
-            .update({
-                ...data,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', leadId)
-
-        if (error) {
-            console.error('Error updating lead:', error)
-            throw new Error(error.message)
-        }
-
+        await serverUpdateLead(Number(leadId), updateData)
         return { success: true }
     } catch (error) {
         console.error('Unexpected error in updateLead:', error)
@@ -287,7 +289,13 @@ export async function updateLead(leadId: string, data: Partial<Lead>) {
 }
 
 export async function logLeadOutcome(leadId: string, outcome: Lead['outcome'], reason?: string) {
-    return updateLead(leadId, { outcome, outcome_reason: reason })
+    try {
+        await serverLogLeadOutcome(Number(leadId), outcome!, reason)
+        return { success: true }
+    } catch (error) {
+        console.error('Unexpected error in logLeadOutcome:', error)
+        throw error
+    }
 }
 
 export async function generateOutreachAction(lead: Lead, config: { format: string, isFollowUp: boolean }) {
