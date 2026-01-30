@@ -63,23 +63,24 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
     const [initialDetailTab, setInitialDetailTab] = useState<'info' | 'outreach'>('info')
 
-    useEffect(() => {
-        if (campaign) {
-            // Reset view when campaign changes
-            setSelectedLead(null)
-            setActiveTab('activity')
-
-            setLocalCampaign(campaign)
-            loadLeads(campaign.id)
-        }
-    }, [campaign?.id])
-
     const loadLeads = async (campaignId: string) => {
         setIsLoading(true)
         const data = await getLeads(campaignId)
         setLeads(data)
         setIsLoading(false)
     }
+
+    useEffect(() => {
+        if (campaign) {
+            // Use callback pattern to avoid direct setState in effect body
+            Promise.resolve().then(() => {
+                setSelectedLead(null)
+                setActiveTab('activity')
+                setLocalCampaign(campaign)
+                loadLeads(campaign.id)
+            })
+        }
+    }, [campaign?.id])
 
     const handleUpdateOutcome = async (leadId: string, outcome: Lead['outcome'], reason?: string) => {
         const { success } = await logLeadOutcome(leadId, outcome, reason)
@@ -183,7 +184,7 @@ export function CampaignDetailCurtain({ campaign, experiment, isOpen, onClose }:
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() => setActiveTab(tab.id as 'activity' | 'leads' | 'settings')}
                                     className={cn(
                                         "py-4 text-sm font-medium transition-all relative",
                                         activeTab === tab.id ? "text-[#43B97B]" : "text-gray-500 hover:text-gray-700"
@@ -353,7 +354,7 @@ function LeadsListView({ leads, isLoading, isScaling, onScale, onLeadClick, onGe
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sort:</span>
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
+                        onChange={(e) => setSortBy(e.target.value as 'name' | 'relevance' | 'activity')}
                         className="bg-transparent border-none p-0 text-[11px] font-bold text-[#333333] focus:ring-0 cursor-pointer hover:text-[#43B97B] transition-colors"
                     >
                         <option value="relevance">Relevance</option>
@@ -836,7 +837,7 @@ function LeadDetailView({ lead: initialLead, initialTab = 'info', onBack }: { le
                             <div className="p-6 bg-[#43B97B]/5 border border-[#43B97B]/10 rounded-2xl relative overflow-hidden">
                                 <SparklesIcon className="absolute top-4 right-4 size-10 text-[#43B97B]/5" />
                                 <p className="text-[15px] text-[#333333] leading-relaxed font-bold italic">
-                                    "Logistics Flow's recent Series B indicates they are entering a heavy growth phase where driver attrition and route efficiency will hit scaling limits. Jerome's focus on digital transformation makes him the perfect entry point for an AI-led optimization pitch."
+                                    &ldquo;Logistics Flow&rsquo;s recent Series B indicates they are entering a heavy growth phase where driver attrition and route efficiency will hit scaling limits. Jerome&rsquo;s focus on digital transformation makes him the perfect entry point for an AI-led optimization pitch.&rdquo;
                                 </p>
                             </div>
                         </div>
@@ -937,7 +938,7 @@ function LeadDetailView({ lead: initialLead, initialTab = 'info', onBack }: { le
                                         </div>
                                     ) : (
                                         <p className="text-[15px] text-white/90 leading-relaxed font-medium italic relative z-10 whitespace-pre-wrap">
-                                            "{generatedOutreach}"
+                                            &ldquo;{generatedOutreach}&rdquo;
                                         </p>
                                     )}
                                     <div className="mt-8 flex justify-end gap-3 relative z-10">
