@@ -342,3 +342,39 @@ export async function generateOutreachAction(lead: Lead, config: { format: strin
         throw error
     }
 }
+export async function generateCustomOutreach(
+    lead: Lead,
+    config: { platform: string; type: string; context?: string }
+) {
+    try {
+        const business = ContentEngineService.getShipSyncContext();
+
+        const prospect = {
+            firstName: lead.full_name.split(' ')[0],
+            lastName: lead.full_name.split(' ').slice(1).join(' '),
+            role: lead.job_title || 'Professional',
+            company: lead.company || 'Their Company',
+            fullProfile: lead.enrichment_data?.summary || '',
+            rawActivity: lead.enrichment_data?.signals?.map(s => s.description).join('\n') || '',
+            icpCategory: 'Target Logistics'
+        };
+
+        const fit = {
+            logicalConnection: lead.enrichment_data?.summary || 'Good fit based on role and company.',
+            warmthLevel: 'custom',
+            shouldProceed: true
+        };
+
+        const result = await ContentEngineService.generateCustomOutreach(
+            { business, prospect, fit },
+            config.platform,
+            config.type,
+            config.context
+        );
+
+        return result;
+    } catch (error) {
+        console.error('Error generating custom outreach:', error)
+        throw error
+    }
+}

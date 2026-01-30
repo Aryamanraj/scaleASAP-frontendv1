@@ -123,6 +123,84 @@ Return a JSON object with:
     }
 
     /**
+     * Generates a custom outreach message based on business context, prospect data, and custom parameters.
+     */
+    static async generateCustomOutreach(
+        request: GenerationRequest,
+        platform: string,
+        messageType: string,
+        userContext?: string
+    ): Promise<OutreachResult> {
+        // 1. Validate input
+        const validated = OutreachRequestSchema.parse(request);
+
+        // 2. Analyze Activity
+        const activityAnalysis = await this.analyzeLinkedInActivity(validated.prospect.rawActivity || '');
+
+        // 3. Prepare contextual inputs
+        const businessString = JSON.stringify({
+            ...validated.business,
+            onboardingContext: validated.business.onboardingContext,
+            offer: validated.business.offer
+        }, null, 2);
+
+        const prospectString = JSON.stringify({
+            ...validated.prospect,
+            activityAnalysis,
+            icpCategory: validated.prospect.icpCategory
+        }, null, 2);
+
+        // 4. Final generation with custom instructions
+        const messages: ChatMessage[] = [
+            { role: 'system', content: OUTREACH_SYSTEM_PROMPT },
+            {
+                role: 'user',
+                content: `Here is the context for the outreach generation:
+
+BUSINESS CONTEXT:
+${businessString}
+
+PROSPECT DATA:
+${prospectString}
+
+ICP FIT ANALYSIS:
+${JSON.stringify(validated.fit, null, 2)}
+
+CUSTOM CONSTRAINTS:
+- Platform: ${platform}
+- Message Type: ${messageType}
+${userContext ? `- Additional Context (e.g. user response): ${userContext}` : ''}
+
+Please generate a message that explicitly respects these custom constraints. 
+The message should be optimized for the ${platform} platform and be a ${messageType}.
+If the platform is 'Email', ignore the LinkedIn-specific constraints like character limits for connection requests, but keep the concise, conversation-first primary mindset.
+If additional context or user response is provided, ensure the message incorporates or addresses it naturally.
+
+The response must be in JSON format as specified in the system prompt.`,
+            },
+        ];
+
+        // 5. Call AI provider
+        const { content } = await chatCompletion({
+            model: 'gpt-4o',
+            messages,
+            temperature: 0.7,
+        });
+
+        // 6. Parse and return result
+        try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            const jsonString = jsonMatch ? jsonMatch[0] : content;
+            const result = JSON.parse(jsonString) as OutreachResult;
+
+            return result;
+        } catch {
+            console.error('[ContentEngineService] Failed to parse AI response:', content);
+            throw new Error('Failed to parse content generation response');
+        }
+    }
+
+    /**
      * Default logistics company context (ShipSync) if none provided.
      */
     static getShipSyncContext() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FlickeringGrid } from "@/components/dashboard/profile/flickering-grid";
-import { ArrowLeft, HelpCircle, Flame, Mail, Phone, MapPin, Activity, Copy, ExternalLink, Globe, CheckCheck, Briefcase, GraduationCap, CheckCircle, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowLeft, HelpCircle, Flame, Mail, Phone, MapPin, Activity, Copy, ExternalLink, Globe, CheckCheck, Briefcase, GraduationCap, CheckCircle, MessageSquare, Sparkles, Send, ChevronDown, Loader2, Upload, Trash2 } from "lucide-react";
 import { LinkedInIcon, XIcon, GmailIcon } from "@/components/dashboard/profile/social-icons";
 import { ContactItem } from "@/components/dashboard/profile/contact-item";
 import { SocialActionCard } from "@/components/dashboard/profile/social-action-card";
@@ -10,12 +10,28 @@ import { useState, useEffect, useMemo } from "react";
 import { Lead } from "@/app/actions/leads";
 import { Campaign } from "@/app/actions/campaigns";
 import { LEAD_STATUS_CONFIG, getStatusSequence, LeadStatus } from "@/lib/utils/lead-status";
+import { generateCustomOutreach } from "@/app/actions/leads";
+import { toast } from "sonner";
+
 
 interface LeadProfileUIProps {
     lead: Lead;
     onBack: () => void;
     campaign?: Campaign | null;
 }
+
+const PLATFORM_MESSAGE_TYPES = {
+    linkedin: [
+        { value: 'connection_request', label: 'Connection Request' },
+        { value: 'follow_up', label: 'Follow Up Message' },
+        { value: 'custom', label: 'Custom Outreach' }
+    ],
+    email: [
+        { value: 'first_touch', label: 'First Touch Email' },
+        { value: 'follow_up', label: 'Follow Up Email' },
+        { value: 'custom', label: 'Custom Outreach' }
+    ]
+} as const;
 
 const Skeleton = ({ width, height, borderRadius = "4px", style = {} }: { width: string | number, height: string | number, borderRadius?: string, style?: any }) => (
     <div
@@ -33,6 +49,44 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
     const [statusIndex, setStatusIndex] = useState(0);
     const [activeTab, setActiveTab] = useState("overview");
     const [hasCompletedAnimation, setHasCompletedAnimation] = useState(false);
+
+    // Custom message generation state
+    const [genPlatform, setGenPlatform] = useState<'linkedin' | 'email'>('linkedin');
+    const [genType, setGenType] = useState('connection_request');
+    const [genContext, setGenContext] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedMessages, setGeneratedMessages] = useState<any[]>([]);
+
+    const handleGenerate = async () => {
+        if (isGenerating) return;
+        setIsGenerating(true);
+        try {
+            const result = await generateCustomOutreach(lead, {
+                platform: genPlatform,
+                type: genType,
+                context: genContext
+            });
+
+            const newMessage = {
+                id: Date.now().toString(),
+                content: result.followUpDM || result.connectionRequest || '',
+                platform: genPlatform,
+                type: genType,
+                timestamp: new Date().toLocaleTimeString(),
+                thinking: result.thinking?.whyThisApproach || 'Tailored to your needs'
+            };
+
+            setGeneratedMessages(prev => [newMessage, ...prev]);
+            toast.success("Message generated successfully!");
+            setGenContext(''); // Clear context after generation
+        } catch (error) {
+            console.error("Failed to generate message:", error);
+            toast.error("Failed to generate message. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
 
     // Derived statuses based on lead's actual status
     const statuses = useMemo(() => {
@@ -58,6 +112,12 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
     }, [lead.status]);
 
     const isLoaded = hasCompletedAnimation || statusIndex === statuses.length - 1;
+
+    useEffect(() => {
+        if (isLoaded && generatedMessages.length === 0 && !isGenerating) {
+            handleGenerate();
+        }
+    }, [isLoaded, generatedMessages.length, isGenerating]);
 
     useEffect(() => {
         // Reset animation state when lead changes
@@ -110,12 +170,13 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                 position: 'relative'
             }}
         >
+            {/* Header Section (Fixed) */}
             <div
-                className="no-scrollbar"
                 style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    paddingBottom: '24px'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flexShrink: 0,
+                    position: 'relative'
                 }}
             >
                 <div
@@ -339,12 +400,21 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                         />
                     </div>
                 </div>
+            </div>
 
+            {/* Scrollable Content Section */}
+            <div
+                className="no-scrollbar"
+                style={{
+                    flex: 1,
+                    overflowY: 'auto'
+                }}
+            >
                 <div
                     className="no-scrollbar"
                     style={{
                         flex: 1,
-                        overflowY: 'auto'
+                        paddingBottom: '24px'
                     }}
                 >
                     {activeTab === 'overview' && (
@@ -684,11 +754,11 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '12px',
+                            gap: '16px',
                             padding: '24px',
                             marginTop: '0'
                         }}>
-                            {/* Outbound Message Card */}
+                            {/* Message Generator Card */}
                             <div style={{
                                 backgroundColor: '#ffffff',
                                 border: '1px solid #eeeeee',
@@ -696,82 +766,286 @@ export function LeadProfileUI({ lead, onBack, campaign }: LeadProfileUIProps) {
                                 padding: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '12px'
+                                gap: '16px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
                             }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        color: '#6b7280',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px'
-                                    }}>Next Outreach Message</span>
-                                    <button style={{
-                                        padding: '4px 8px',
-                                        fontSize: '10px',
-                                        fontWeight: 600,
-                                        color: '#10B981',
-                                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                    }}>
-                                        Regenerate
-                                    </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10B981' }}>
+                                    <Sparkles size={18} />
+                                    <span style={{ fontSize: '14px', fontWeight: 600 }}>Message Generator</span>
                                 </div>
 
-                                <div style={{
-                                    backgroundColor: '#fafafa',
-                                    border: '1px solid #e5e7eb',
-                                    borderRadius: '12px',
-                                    padding: '16px',
-                                    fontSize: '14px',
-                                    lineHeight: '1.6',
-                                    color: '#111827',
-                                    fontStyle: 'italic'
-                                }}>
-                                    &quot;{lead.outbound_message || (lead.full_name.split(' ')[0] + ", I saw you're focusing on " + (enrichment?.skills?.[0] || "scaling operations") + " at " + lead.company + ". Would love to connect and share some thoughts.")}&quot;
+                                {/* Platform Selector */}
+                                <div style={{ display: 'flex', gap: '8px', backgroundColor: '#f9fafb', padding: '4px', borderRadius: '10px' }}>
+                                    {(['linkedin', 'email'] as const).map((p) => (
+                                        <button
+                                            key={p}
+                                            onClick={() => {
+                                                setGenPlatform(p);
+                                                setGenType(PLATFORM_MESSAGE_TYPES[p][0].value);
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                borderRadius: '8px',
+                                                textTransform: 'capitalize',
+                                                transition: 'all 0.2s',
+                                                backgroundColor: genPlatform === p ? '#ffffff' : 'transparent',
+                                                color: genPlatform === p ? '#111827' : '#6b7280',
+                                                border: 'none',
+                                                boxShadow: genPlatform === p ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            {p === 'linkedin' ? <LinkedInIcon size={14} /> : <GmailIcon size={14} />}
+                                            {p}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button style={{
-                                        flex: 1,
-                                        padding: '10px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        color: '#6b7280',
-                                        backgroundColor: '#ffffff',
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px'
-                                    }}>
-                                        <Copy size={16} />
-                                        Copy
-                                    </button>
-                                    <button style={{
-                                        flex: 1,
-                                        padding: '10px',
-                                        fontSize: '12px',
+                                {/* Message Type */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Message Type</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <select
+                                            value={genType}
+                                            onChange={(e) => setGenType(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                fontSize: '13px',
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #e5e7eb',
+                                                borderRadius: '10px',
+                                                appearance: 'none',
+                                                cursor: 'pointer',
+                                                color: '#111827'
+                                            }}
+                                        >
+                                            {PLATFORM_MESSAGE_TYPES[genPlatform].map((type) => (
+                                                <option key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#9ca3af' }} />
+                                    </div>
+                                </div>
+
+                                {/* Context */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Add Context / User Response</label>
+                                    <textarea
+                                        value={genContext}
+                                        onChange={(e) => setGenContext(e.target.value)}
+                                        placeholder="Paste their last message or add specific context to tailor the response..."
+                                        style={{
+                                            width: '100%',
+                                            height: '100px',
+                                            padding: '12px',
+                                            fontSize: '13px',
+                                            backgroundColor: '#ffffff',
+                                            border: '1px solid #e5e7eb',
+                                            borderRadius: '10px',
+                                            resize: 'none',
+                                            color: '#111827',
+                                            lineHeight: '1.5'
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2px' }}>
+                                        <button style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            fontSize: '11px',
+                                            color: '#6b7280',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '4px 0'
+                                        }}>
+                                            <Upload size={12} />
+                                            <span>Upload Screenshot / PDF</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        fontSize: '13px',
                                         fontWeight: 600,
                                         color: '#ffffff',
                                         backgroundColor: '#10B981',
                                         border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
+                                        borderRadius: '10px',
+                                        cursor: isGenerating ? 'not-allowed' : 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '6px'
-                                    }}>
-                                        <Mail size={16} />
-                                        Send Now
-                                    </button>
-                                </div>
+                                        gap: '8px',
+                                        transition: 'all 0.2s',
+                                        opacity: isGenerating ? 0.7 : 1
+                                    }}
+                                >
+                                    {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                    {isGenerating ? 'Generating...' : 'Generate AI Message'}
+                                </button>
                             </div>
+
+                            {/* Generated Messages List */}
+                            {generatedMessages.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                                    <div style={{ borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '4px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Generated History</span>
+                                    </div>
+                                    {generatedMessages.map((msg) => (
+                                        <div
+                                            key={msg.id}
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #eeeeee',
+                                                borderRadius: '16px',
+                                                padding: '16px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '12px',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <div style={{
+                                                        padding: '3px 6px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '10px',
+                                                        fontWeight: 700,
+                                                        backgroundColor: msg.platform === 'linkedin' ? 'rgba(0, 119, 181, 0.1)' : 'rgba(234, 67, 53, 0.1)',
+                                                        color: msg.platform === 'linkedin' ? '#0077B5' : '#EA4335',
+                                                        textTransform: 'uppercase'
+                                                    }}>
+                                                        {msg.platform}
+                                                    </div>
+                                                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>{msg.timestamp}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setGeneratedMessages(prev => prev.filter(m => m.id !== msg.id))}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#9ca3af' }}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+
+                                            <div style={{
+                                                fontSize: '13px',
+                                                lineHeight: '1.6',
+                                                color: '#111827',
+                                                backgroundColor: '#f9fafb',
+                                                padding: '12px',
+                                                borderRadius: '12px',
+                                                border: '1px solid #f3f4f6'
+                                            }}>
+                                                {msg.content}
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <Sparkles size={12} color="#10B981" />
+                                                <span style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>{msg.thinking}</span>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(msg.content);
+                                                        toast.success("Copied to clipboard!");
+                                                    }}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '8px',
+                                                        fontSize: '12px',
+                                                        fontWeight: 600,
+                                                        color: '#6b7280',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #e5e7eb',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '6px'
+                                                    }}
+                                                >
+                                                    <Copy size={16} />
+                                                    Copy
+                                                </button>
+                                                <button style={{
+                                                    flex: 1,
+                                                    padding: '8px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    color: '#ffffff',
+                                                    backgroundColor: '#10B981',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px'
+                                                }}>
+                                                    <Send size={16} />
+                                                    Send
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Original Outbound Message Card - Keep it as "Drafted Message" if available */}
+                            {lead.outbound_message && (
+                                <div style={{
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #eeeeee',
+                                    borderRadius: '16px',
+                                    padding: '20px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '12px',
+                                    opacity: 0.8
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            color: '#6b7280',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px'
+                                        }}>Default Experiment Message</span>
+                                    </div>
+
+                                    <div style={{
+                                        backgroundColor: '#fafafa',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        fontSize: '14px',
+                                        lineHeight: '1.6',
+                                        color: '#111827',
+                                        fontStyle: 'italic'
+                                    }}>
+                                        &quot;{lead.outbound_message}&quot;
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
