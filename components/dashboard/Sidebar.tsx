@@ -12,7 +12,8 @@ import {
     Cog6ToothIcon as Cog6ToothOutline,
     ArrowLeftStartOnRectangleIcon,
     MegaphoneIcon as MegaphoneOutline,
-    QuestionMarkCircleIcon as QuestionMarkCircleOutline
+    QuestionMarkCircleIcon as QuestionMarkCircleOutline,
+    MapIcon as MapOutline
 } from '@heroicons/react/24/outline'
 import {
     Squares2X2Icon as Squares2X2Solid,
@@ -237,6 +238,13 @@ export function Sidebar({ workspace, allWorkspaces, currentTab, onTabChange, cla
                         <QuestionMarkCircleOutline className="size-4 shrink-0 text-gray-400 group-hover:text-gray-600" />
                     )}
                     <span>Help & Support</span>
+                </button>
+                <button
+                    onClick={() => window.open('https://scaleasap.featurebase.app/roadmap', '_blank')}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-[#333333] hover:bg-gray-100/50 rounded-lg transition-colors group"
+                >
+                    <MapOutline className="size-4 shrink-0 text-gray-400 group-hover:text-gray-600" />
+                    <span>Roadmap</span>
                 </button>
                 <button
                     onClick={() => router.push('/workspaces')}

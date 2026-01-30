@@ -153,10 +153,10 @@ export function LeadsList({
                                         {/* Lead Name */}
                                         <td className="py-3.5 px-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="size-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] font-black text-[#43B97B] uppercase shadow-sm shrink-0">
+                                                <div className="size-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[10px] font-black text-[#43B97B] uppercase shrink-0">
                                                     {lead.full_name.charAt(0)}
                                                 </div>
-                                                <span className="text-sm font-bold text-[#111827] tracking-tight">
+                                                <span className="text-sm font-medium text-[#333333] tracking-tight">
                                                     {lead.full_name}
                                                 </span>
                                             </div>
