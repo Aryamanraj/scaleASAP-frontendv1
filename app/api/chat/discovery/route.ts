@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         // stored in DB from previous turns.
 
         const lastUserMessage = messages[messages.length - 1]
-        let serverHistory = (workspace?.discovery_chat_history as any[]) || []
+        const serverHistory = (workspace?.discovery_chat_history as Array<{role: string, content: string}>) || []
 
         // If it's a follow-up, we might want to start fresh or keep context? 
         // Logic in client sends empty history for follow-up, but server might have it.
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
             // For follow up, client sends limited context. Let's respect client intent? 
             // Actually, if we want to hide JSON, we must have been the one source of truth.
             // But if isFollowUp is true, previous history might be irrelevant or we want to reference previous experiments.
-            processedMessages = messages // Use client messages for follow up start?
+        processedMessages = messages as Array<{role: string, content: string}> // Use client messages for follow up start?
         } else {
             // For standard chat, merge server history + new message
             // Check if server history already has the last message (dedup)
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
         const decoder = new TextDecoder()
 
         let fullContent = ''
-        let jsonBuffer = ''
+        const jsonBuffer = ''
         let isCollectingJSON = false
         const jsonStartMarker = '--- JSON_OUTPUT_START ---'
 
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
             async flush(controller) {
                 // Stream finished. Process the full content.
                 // 1. Parse JSON if exists
-                let finalContentForClient = fullContent // Default if no JSON
+                const finalContentForClient = fullContent // Default if no JSON
 
                 if (fullContent.includes(jsonStartMarker)) {
                     const parts = fullContent.split(jsonStartMarker)
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
                 // which is Array<{role: string, content: string}>.
                 // processedMessages might have 'any' type but structure is same.
 
-                await saveDiscoveryChatHistory(workspaceId, newHistory as any)
+                await saveDiscoveryChatHistory(workspaceId, newHistory as Array<{role: string, content: string}>)
             }
         })
 
