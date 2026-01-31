@@ -1,7 +1,6 @@
 "use server"
 
-import { chatCompletion } from "@/lib/ai-provider";
-import { WORLDVIEW_GENERATION_PROMPT } from "@/lib/prompts/worldview";
+import { serverGenerateWorldview } from "@/lib/api/server-workspaces";
 import { getOnboardingData, saveOnboardingDataToMarkdown } from "./onboarding";
 
 export async function generateWorldview(workspaceId: string) {
@@ -16,37 +15,28 @@ export async function generateWorldview(workspaceId: string) {
             return { success: true, message: "Worldview already exists" };
         }
 
-        const onboardingDataStr = JSON.stringify(data, null, 2);
-        const websiteScrapeStr = data.website_scrape || "No website scrape available";
-
-        const prompt = WORLDVIEW_GENERATION_PROMPT
-            .replace("{{onboardingData}}", onboardingDataStr)
-            .replace("{{websiteScrape}}", websiteScrapeStr);
-
-        const { content, provider } = await chatCompletion({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: "You are a strategic analyst. Return your analysis in the requested markdown format." },
-                { role: "user", content: prompt }
-            ]
+        // Call backend API to generate worldview
+        const result = await serverGenerateWorldview(Number(workspaceId), {
+            onboardingData: data,
+            websiteScrape: data.website_scrape || undefined,
         });
 
-        console.log(`[Worldview Generation] Using provider: ${provider}`);
+        console.log(`[Worldview Generation] Using provider: ${result.provider}`);
 
-        if (!content) {
+        if (!result.worldview) {
             return { success: false, error: "Empty response from AI" };
         }
 
         // Update the data object
         const updatedData = {
             ...data,
-            worldview_full: content,
+            worldview_full: result.worldview,
         };
 
         // Save back to backend and markdown
         await saveOnboardingDataToMarkdown(workspaceId, updatedData);
 
-        return { success: true, worldview: content };
+        return { success: true, worldview: result.worldview };
 
     } catch (error) {
         console.error("Worldview generation error:", error);
