@@ -8,8 +8,12 @@ import {
     serverCreateLeadsBatch,
     serverUpdateLead,
     serverLogLeadOutcome,
+    serverGenerateOutreach,
     type LeadResponse,
     type LeadEnrichmentData,
+    type OutreachResult,
+    type MessagePlatform,
+    type MessageType,
 } from '@/lib/api/server-leads'
 
 // ============================================================================
@@ -36,9 +40,21 @@ export interface Experience {
     time_to: string
 }
 
+export interface Education {
+    school_name: string
+    school_logo_url?: string
+    logo_url?: string
+    degree: string
+    field_of_study?: string
+    field?: string
+    time_from?: string
+    time_to?: string
+}
+
 export interface LeadEnrichment {
     signals: Signal[]
     experience: Experience[]
+    education?: Education[]
     summary: string
     phone?: string
     location?: string
@@ -332,5 +348,32 @@ export async function generateOutreachAction(lead: Lead, config: { format: strin
     } catch (error) {
         console.error('Error generating outreach:', error)
         throw error
+    }
+}
+
+/**
+ * Generate custom outreach for a lead using the backend AI service.
+ * This keeps prompts server-side and uses onboarding data for context.
+ */
+export async function generateCustomOutreach(
+    lead: Lead,
+    config: { platform: string; type: string; context?: string }
+): Promise<OutreachResult> {
+    try {
+        const numericId = parseInt(lead.id, 10);
+        if (isNaN(numericId)) {
+            throw new Error('Invalid lead ID');
+        }
+
+        const result = await serverGenerateOutreach(numericId, {
+            platform: config.platform as MessagePlatform,
+            messageType: config.type as MessageType,
+            context: config.context,
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Error generating custom outreach:', error);
+        throw error;
     }
 }
