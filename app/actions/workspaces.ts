@@ -100,6 +100,11 @@ function filterSensitiveChatHistory(history: Array<{ role: string, content: stri
     if (!history) return undefined
 
     return history.map(msg => {
+        // Skip empty or invalid messages
+        if (!msg || !msg.content || typeof msg.content !== 'string') {
+            return { role: (msg?.role || 'assistant') as 'user' | 'assistant', content: '' }
+        }
+
         // Filter out JSON output blocks
         if (msg.content.includes('--- JSON_OUTPUT_START ---')) {
             const parts = msg.content.split('--- JSON_OUTPUT_START ---')
@@ -180,9 +185,13 @@ export async function createWorkspace(data: { name?: string }) {
 
 export async function getWorkspaces() {
     try {
+        console.log('getWorkspaces: Calling serverGetWorkspaces()')
         const workspaces = await serverGetWorkspaces()
-        console.log(`getWorkspaces: Found ${workspaces.length} workspaces via backend API`)
-        return workspaces.map(mapWorkspaceToFrontend)
+        console.log(`getWorkspaces: serverGetWorkspaces returned:`, JSON.stringify(workspaces, null, 2))
+        console.log(`getWorkspaces: Found ${workspaces?.length ?? 'null'} workspaces via backend API`)
+        const mapped = workspaces.map(mapWorkspaceToFrontend)
+        console.log(`getWorkspaces: Mapped workspaces:`, JSON.stringify(mapped, null, 2))
+        return mapped
     } catch (error) {
         console.error('Unexpected error in getWorkspaces:', error)
         return []
