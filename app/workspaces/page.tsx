@@ -18,22 +18,26 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 import { ScaleLogo } from "@/components/scale-logo"
 import { createWorkspace, deleteWorkspace, getWorkspaces, Workspace } from "@/app/actions/workspaces"
-import { logout } from "@/app/actions/auth"
+import { logout, getUserEmail } from "@/app/actions/auth"
 import { toast } from "sonner"
 
 export default function WorkspacesPage() {
     const router = useRouter()
-    const userEmail = "sahil@scaleasap.com"
-    const userName = userEmail.split('@')[0]
-    const formattedName = userName.charAt(0).toUpperCase() + userName.slice(1)
 
     const [workspaces, setWorkspaces] = useState<Workspace[]>([])
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
+    const [userEmail, setUserEmail] = useState<string | null>(null)
+
+    const userName = userEmail ? userEmail.split('@')[0] : ''
+    const formattedName = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : ''
 
     const loadWorkspaces = async () => {
         try {
+            console.log("loadWorkspaces: Calling getWorkspaces()")
             const data = await getWorkspaces()
+            console.log("loadWorkspaces: Received data:", JSON.stringify(data, null, 2))
+            console.log("loadWorkspaces: Data length:", data?.length ?? 'null')
             setWorkspaces(data)
         } catch (error) {
             console.error("Failed to load workspaces:", error)
@@ -42,6 +46,8 @@ export default function WorkspacesPage() {
 
     useEffect(() => {
         const init = async () => {
+            const email = await getUserEmail()
+            setUserEmail(email)
             await loadWorkspaces()
         }
         init()
