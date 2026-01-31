@@ -96,6 +96,58 @@ export interface UpdateLeadRequest {
 }
 
 // ============================================================================
+// Generated Messages Types
+// ============================================================================
+
+export type MessagePlatform = 'linkedin' | 'email';
+export type MessageType = 'connection_request' | 'follow_up' | 'first_touch' | 'custom';
+
+export interface GeneratedMessageResponse {
+  GeneratedMessageID: number;
+  LeadID: number;
+  Platform: MessagePlatform;
+  MessageType: MessageType;
+  Content: string;
+  Context?: string;
+  Thinking?: OutreachThinking;
+  Timestamp: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
+export interface CreateGeneratedMessageRequest {
+  platform: MessagePlatform;
+  messageType: MessageType;
+  content: string;
+  context?: string;
+  thinking?: OutreachThinking;
+}
+
+export interface GenerateOutreachRequest {
+  platform: MessagePlatform;
+  messageType: MessageType;
+  context?: string;
+}
+
+export interface OutreachThinking {
+  whatIKnowAboutThem?: string;
+  whatTheyMightCareAbout?: string;
+  whyThisApproach?: string;
+  risks?: string;
+}
+
+export interface OutreachResult {
+  shouldReachOut: boolean;
+  isWarm?: boolean;
+  reason: string;
+  connectionRequest?: string;
+  followUpDm?: string;
+  personalizationAngle?: string;
+  alternative?: string;
+  thinking?: OutreachThinking;
+}
+
+// ============================================================================
 // API Functions
 // ============================================================================
 
@@ -181,6 +233,47 @@ export async function serverLogLeadOutcome(
  */
 export async function serverGetLeadSignals(leadId: number): Promise<unknown[]> {
   const response = await serverApiClient.get<unknown[]>(`/leads/${leadId}/signals`);
+  return unwrapServerResponse(response);
+}
+
+// ============================================================================
+// Generated Messages API Functions
+// ============================================================================
+
+/**
+ * Get all generated messages for a lead
+ */
+export async function serverGetGeneratedMessages(leadId: number): Promise<GeneratedMessageResponse[]> {
+  const response = await serverApiClient.get<GeneratedMessageResponse[]>(`/leads/${leadId}/messages`);
+  return unwrapServerResponse(response);
+}
+
+/**
+ * Save a generated message for a lead
+ */
+export async function serverSaveGeneratedMessage(
+  leadId: number,
+  data: CreateGeneratedMessageRequest
+): Promise<GeneratedMessageResponse> {
+  const response = await serverApiClient.post<GeneratedMessageResponse>(`/leads/${leadId}/messages`, data);
+  return unwrapServerResponse(response);
+}
+
+/**
+ * Delete a generated message
+ */
+export async function serverDeleteGeneratedMessage(messageId: number): Promise<void> {
+  await serverApiClient.delete(`/messages/${messageId}`);
+}
+
+/**
+ * Generate AI outreach for a lead
+ */
+export async function serverGenerateOutreach(
+  leadId: number,
+  data: GenerateOutreachRequest
+): Promise<OutreachResult> {
+  const response = await serverApiClient.post<OutreachResult>(`/leads/${leadId}/generate-outreach`, data);
   return unwrapServerResponse(response);
 }
 
