@@ -58,8 +58,12 @@ export interface CreateDiscoveryFeedbackRequest {
  * Get all workspaces for the current user (server-side)
  */
 export async function serverGetWorkspaces(): Promise<WorkspaceResponse[]> {
+  console.log('serverGetWorkspaces: Making API call to /workspaces')
   const response = await serverApiClient.get<WorkspaceResponse[]>('/workspaces');
-  return unwrapServerResponse(response);
+  console.log('serverGetWorkspaces: Raw API response:', JSON.stringify(response, null, 2))
+  const unwrapped = unwrapServerResponse(response);
+  console.log('serverGetWorkspaces: Unwrapped response:', JSON.stringify(unwrapped, null, 2))
+  return unwrapped;
 }
 
 /**
@@ -118,6 +122,34 @@ export async function serverUpdateDiscoveryChatHistory(
   history: ChatMessage[]
 ): Promise<void> {
   await serverApiClient.put(`/workspaces/${workspaceId}/discovery-chat`, { history });
+}
+
+// ============================================================================
+// Worldview Generation
+// ============================================================================
+
+export interface GenerateWorldviewRequest {
+  onboardingData: Record<string, unknown>;
+  websiteScrape?: string;
+}
+
+export interface GenerateWorldviewResponse {
+  worldview: string;
+  provider: string;
+}
+
+/**
+ * Generate worldview document from onboarding data (server-side)
+ */
+export async function serverGenerateWorldview(
+  workspaceId: number,
+  data: GenerateWorldviewRequest
+): Promise<GenerateWorldviewResponse> {
+  const response = await serverApiClient.post<GenerateWorldviewResponse>(
+    `/workspaces/${workspaceId}/worldview/generate`,
+    data
+  );
+  return unwrapServerResponse(response);
 }
 
 // ============================================================================
